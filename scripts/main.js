@@ -1,5 +1,8 @@
 let money = 1e12;
 let spentMoney = 0;
+let player = {
+    clickStrength: 0.01
+}
 const moneyDisplay = document.querySelector(".money-display");
 const numberFormat1 = new Intl.NumberFormat("en-US", {style: "currency", currency: "USD"});
 const moneyButton = document.querySelector(".money-button");
@@ -24,7 +27,8 @@ const messages = [
     {condition: 203, text: "You've spent the average cost of a dental cleaning ($203)"},
     {condition: 250, text: "This is Alice. She helps Bob spend more."},
     {condition: 275, text: "Of course, we can clone her too"},
-    {condition: 1013.20, text: "You've spent an average monthly grocery bill for a family of four ($1,013.20)"}
+    {condition: 1013.20, text: "You've spent an average monthly grocery bill for a family of four ($1,013.20)"},
+    {condition: 1413, text: "You have spent the median rent ($1,413)"}
 ]
 
 let people = [];
@@ -70,7 +74,7 @@ function updateState(dt){
         let cloneButton = document.createElement("button");
         cloneButton.textContent = "Clone";
         cloneButton.addEventListener("click", () => {
-            people[0].amount++;
+            people[0].amount += player.clickStrength*10;
             document.getElementById("Bob").textContent = `${people[0].name}s: Spending ${numberFormat1.format(people[0].spendPower*people[0].amount)} per second`;
         });
         peopleDisplay.append(cloneButton);
@@ -92,8 +96,8 @@ function updateState(dt){
         let cloneButton = document.createElement("button");
         cloneButton.textContent = "Clone";
         cloneButton.addEventListener("click", () => {
-            people[1].spendMultiplier += 0.01;
-            document.getElementById("Alice").textContent = `${people[1].name}: Multiplying spending by ${people[1].spendMultiplier}`;
+            people[1].spendMultiplier += player.clickStrength;
+            document.getElementById("Alice").textContent = `${people[1].name}: Multiplying spending by ${people[1].spendMultiplier.toFixed(2)}`;
         });
         peopleDisplay.append(cloneButton);
         hasAliceClone = true;
@@ -117,7 +121,7 @@ class Person{
 }
 
 moneyButton.addEventListener("click", () => {
-    decreaseMoney(1);
+    decreaseMoney(player.clickStrength);
 });
 
 let lastTime = null;
