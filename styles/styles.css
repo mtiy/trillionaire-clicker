@@ -1,0 +1,33 @@
+.money-display{
+    font-size: 40px;
+}
+
+.wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.money-button-container {
+    display: flex;
+    justify-content: center;
+}
+
+.money-button {
+    font-size: 2em;
+    padding: 10px 20px;
+    cursor: pointer;
+}
+
+.message-log {
+    font-size: 1.2em;
+    width: 400px;
+    height: 200px;
+    overflow: hidden;
+}
+
+.message {
+    padding-top: 10px;
+}
