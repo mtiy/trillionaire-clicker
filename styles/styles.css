@@ -57,3 +57,8 @@
 .people {
     margin-top: 10px;
 }
+
+.activate-button {
+    margin-left: 10px;
+    cursor: pointer;
+}
