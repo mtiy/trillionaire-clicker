@@ -31,3 +31,21 @@
 .message {
     padding-top: 10px;
 }
+
+.people-container {
+    border: 1px solid black;
+    padding: 1em 1em;
+    font-size: 1.2em;
+    margin-left: 50px;
+    width: 300px;
+}
+
+.horizontal-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-top: 100px;
+}
+
+.people {
+    margin-top: 10px;
+}
