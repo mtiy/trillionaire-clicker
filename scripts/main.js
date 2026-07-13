@@ -51,6 +51,12 @@ let activateButtons = {
         removeUpgrade(){
             player.clickStrength /= 10;
         }
+    },
+    bobClone: {
+        removeUpgrade(){
+            autocloneObject.autocloneAmount = 0;
+            autocloneActivated = false;
+        }
     }
 }
 
@@ -131,12 +137,14 @@ function updateState(dt){
         hasAliceClone = true;
     }
 
-    if(!unlockedClickBoost && Math.round(spentMoney*100)/100 >= 1600){
+    if(!unlockedClickBoost && Math.round(spentMoney*100)/100 >= 0.10){
         let m = document.createElement("div");
         m.textContent = "Boost Click Strength";
+        m.classList.add("upgrade-text");
         let b = document.createElement("button");
         b.textContent = "Activate";
         b.addEventListener("click", () => {
+            undoActivateEffects();
             player.clickStrength *= 10;
             b.disabled = true;
         });
@@ -147,21 +155,16 @@ function updateState(dt){
         unlockedClickBoost = true;
     }
 
-    if(!autocloneObject.unlockedAutocloning && Math.round(spentMoney*100)/100 >= 15000){
-        let autoBob = document.createElement("div");
-        autoBob.textContent = "Autoclone Bobs";
-        let autoBobBtn = document.createElement("button");
-        autoBobBtn.textContent = "Activate";
-        autoBobBtn.addEventListener("click", () => {
+    if(!autocloneObject.unlockedAutocloning && Math.round(spentMoney*100)/100 >= 0.10){
+        let autoBob = new ActivateButton("Autoclone Bobs", "bobClone", function(){
             undoActivateEffects();
             autocloneObject.autocloneActivated = true;
-            autocloneObject.autocloneAmount = 0.01;
-            autoBobBtn.disabled = true;
+            autocloneObject.autocloneAmount = 1;
+            this.disabled = true;
         });
-        autoBobBtn.classList.add("activate-button");
+        console.log(autoBob.createButton());
         autocloneObject.unlockedAutocloning = true;
-        autoBob.append(autoBobBtn);
-        clickDisplay.append(autoBob);
+        clickDisplay.append(autoBob.createButton());
     }
 
     let decreaseAmount = 0;
@@ -171,7 +174,7 @@ function updateState(dt){
     }
     decreaseMoney(decreaseAmount/1000 * dt);
     if(autocloneObject.autocloneActivated){
-        autoclone(autocloneObject)
+        autoclone(autocloneObject, dt)
     }
 }
 
@@ -184,19 +187,41 @@ class Person{
     }
 }
 
+// effect is a function we will call on button click
+class ActivateButton{
+    constructor(upgradeText, name, effect){
+        this.upgradeText = upgradeText;
+        this.effect = effect;
+        this.name = name;
+    }
+
+    createButton(){
+        let d = document.createElement("div");
+        let b = document.createElement("button");
+        d.textContent = this.upgradeText;
+        d.classList.add("upgrade-text");
+        b.textContent = "Activate";
+        b.addEventListener("click", this.effect);
+        b.classList.add("activate-button");
+        b.id = this.name;
+        d.append(b);
+        return d;
+    }
+}
+
+function autoclone(ac, dt){
+    people[0].amount += ac.autocloneAmount/1000 * dt;
+    people[1].spendMultiplier += ac.autocloneMultiplier * dt;
+}
+
 function undoActivateEffects(){
     const buttons = document.querySelectorAll(".activate-button");
     for(i of buttons){
         if(i.disabled){
             activateButtons[i.id].removeUpgrade();
             i.disabled = false;
-        }
+        }   
     }
-}
-
-function autoclone(ac){
-    people[0].amount += ac.autocloneAmount*100;
-    people[1].spendMultiplier += ac.autocloneMultiplier;
 }
 
 moneyButton.addEventListener("click", () => {

@@ -62,3 +62,10 @@
     margin-left: 10px;
     cursor: pointer;
 }
+
+.upgrade-text {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+}
+
