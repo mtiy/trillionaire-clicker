@@ -34,37 +34,77 @@ const messages = [
     {condition: 1600, text: "Let's boost your click power a bit (also applies to cloning)"},
     {condition: 6715, text: "You've spent the average credit card debt ($6,715)"},
     {condition: 15000, text: "Autocloning technology now available"},
-    {condition: 24695, text: "You've spent the starting MSRP of a 2026 Honda Civic ($24,695"},
+    {condition: 24695, text: "You've spent the price of a new Honda Civic ($24,695)"},
     {condition: 39075, text: "You've spent the average federal student loan debt ($39,075)"},
     {condition: 83730, text: "You've spent the median household income ($83,730)"}
 ]
 
-let people = [];
+class Person{
+    constructor(value, name, amount, cost, cloneCost){
+        this.value = value;
+        this.name = name;
+        this.amount = amount;
+        this.cost = cost;
+        this.cloneCost = cloneCost;
+    }
+
+    createElement(text){
+        let p = document.createElement("div");
+        p.textContent = text;
+        p.id = this.name;
+        p.classList.add("people");
+        return p;
+    }
+
+    createCloneButton(createText, buttonText){
+        let cb = document.createElement("button");
+        cb.textContent = buttonText;
+        cb.addEventListener("click", () => {
+            this.amount += player.clickStrength*100;
+            createText();
+        });
+        return cb;
+    }
+}
+
+let people = {
+    bob: new Person(0.01, "Bob", 0, 1.75, 2.25),
+    alice: new Person(0.01, "Alice", 0, 115, 145),
+    intern: new Person(0.01, "Interns", 0, 0.01, null)
+}
+
 let hasBob = false;
 let hasBobClone = false;
 let hasAlice = false;
 let hasAliceClone = false;
 let unlockedClickBoost = false;
+let hasInterns = false;
 
 let activateButtons = {
     clickUpgrade: {
         removeUpgrade(){
             player.clickStrength /= 10;
-        }
+        },
+        cost: 1600
     },
-    bobClone: {
+    autoclone: {
         removeUpgrade(){
-            autocloneObject.autocloneAmount = 0;
+            autocloneObject.bobAmount = 0;
+            autocloneObject.aliceAmount = 0;
+            autocloneObject.internAmount = 0;
             autocloneActivated = false;
-        }
+        },
+        cost: 15000
     }
 }
 
 let autocloneObject = {
     unlockedAutocloning: false,
     autocloneActivated: false,
-    autocloneAmount: 0,
-    autocloneMultiplier: 0
+    amount: 1,
+    bobAmount: 0,
+    aliceAmount: 0,
+    internAmount: 0
 }
 
 function decreaseMoney(amount){
@@ -75,7 +115,7 @@ function decreaseMoney(amount){
 
 function updateDisplay(){
     moneyDisplay.textContent = numberFormat1.format(money);
-    if(Math.round(spentMoney*100)/100 >= messages[0].condition){
+    if(messages.length > 0 && round(spentMoney) >= messages[0].condition){
         let m = document.createElement("div");
         m.textContent = messages[0].text;
         m.classList.add("message");
@@ -87,103 +127,87 @@ function updateDisplay(){
             element.remove();
         }
     });
+
     if(autocloneObject.autocloneActivated){
-        document.getElementById("Bob").textContent = `${people[0].name}s: Spending ${numberFormat1.format(people[0].spendPower*people[0].amount)} per second`;
-        document.getElementById("Alice").textContent = `${people[1].name}s: Multiplying spending by ${people[1].spendMultiplier.toFixed(2)}`;
+        document.getElementById(people.bob.name).textContent = `${people.bob.name}s: Spending ${numberFormat1.format(people.bob.value*people.bob.amount)} per second`;
+        document.getElementById(people.alice.name).textContent = `${people.alice.name}s: Multiplying spending by ${(1+people.alice.value*people.alice.amount).toFixed(2)}`;
+        document.getElementById(people.intern.name).textContent = `${people.intern.name}: Multiply autocloning by ${(1+people.intern.amount*people.intern.value).toFixed(2)}`;
     }
 }
 
 function updateState(dt){
-    if(!hasBob && Math.round(spentMoney*100)/100 >= 1.75){
-        let bob = new Person(0.01, 1, "Bob", 1);
-        people.push(bob);
-        let p = document.createElement("div");
-        p.textContent = `${bob.name}: Spending ${numberFormat1.format(bob.spendPower)} per second`;
-        p.id = bob.name;
-        peopleDisplay.append(p);
+    if(!hasBob && round(spentMoney) >= people.bob.cost){
+        people.bob.amount++;
+        peopleDisplay.append(people.bob.createElement(`${people.bob.name}: Spending ${numberFormat1.format(people.bob.value*people.bob.amount)} per second`));
         hasBob = true;
     }
 
-    if(!hasBobClone && Math.round(spentMoney*100)/100 >= 2.25){
-        let cloneButton = document.createElement("button");
-        cloneButton.textContent = "Clone";
-        cloneButton.addEventListener("click", () => {
-            people[0].amount += player.clickStrength*100;
-            document.getElementById("Bob").textContent = `${people[0].name}s: Spending ${numberFormat1.format(people[0].spendPower*people[0].amount)} per second`;
-        });
-        peopleDisplay.append(cloneButton);
+    if(!hasBobClone && round(spentMoney) >= people.bob.cloneCost){
+        peopleDisplay.append(people.bob.createCloneButton(() => {
+            document.getElementById("Bob").textContent = `${people.bob.name}s: Spending ${numberFormat1.format(people.bob.value*people.bob.amount)} per second`;
+        }, "Clone"));
         hasBobClone = true;
     }
 
-    if(!hasAlice && Math.round(spentMoney*100)/100 >= 115){
-        let alice = new Person(0, 1, "Alice", 1);
-        people.push(alice);
-        let p = document.createElement("div");
-        p.textContent = `${alice.name}: Multiplying spending by ${alice.spendMultiplier}`;
-        p.id = alice.name;
-        p.classList.add("people");
-        peopleDisplay.append(p);
+    if(!hasAlice && round(spentMoney) >= people.alice.cost){
+        people.alice.amount++;
+        peopleDisplay.append(people.alice.createElement(`${people.alice.name}: Multiplying spending by ${1 + people.alice.value*people.alice.amount}`));
         hasAlice = true;
     }
 
-    if(!hasAliceClone && Math.round(spentMoney*100)/100 >= 145){
-        let cloneButton = document.createElement("button");
-        cloneButton.textContent = "Clone";
-        cloneButton.addEventListener("click", () => {
-            people[1].spendMultiplier += player.clickStrength;
-            document.getElementById("Alice").textContent = `${people[1].name}s: Multiplying spending by ${people[1].spendMultiplier.toFixed(2)}`;
-        });
-        peopleDisplay.append(cloneButton);
+    if(!hasAliceClone && round(spentMoney) >= people.alice.cloneCost){
+        peopleDisplay.append(people.alice.createCloneButton(() => {
+            document.getElementById("Alice").textContent = `${people.alice.name}s: Multiplying spending by ${(1 + people.alice.value*people.alice.amount).toFixed(2)}`; 
+        }, "Clone"));
         hasAliceClone = true;
     }
 
-    if(!unlockedClickBoost && Math.round(spentMoney*100)/100 >= 0.10){
-        let m = document.createElement("div");
-        m.textContent = "Boost Click Strength";
-        m.classList.add("upgrade-text");
-        let b = document.createElement("button");
-        b.textContent = "Activate";
-        b.addEventListener("click", () => {
+    if(!unlockedClickBoost && round(spentMoney) >= activateButtons.clickUpgrade.cost){
+        let clickBoost = new ActivateButton("Boost Click Strength", "clickUpgrade", function() {
             undoActivateEffects();
             player.clickStrength *= 10;
-            b.disabled = true;
+            this.disabled = true;
         });
-        b.classList.add("activate-button");
-        b.id = "clickUpgrade";
-        m.append(b);
-        clickDisplay.append(m);
+        clickDisplay.append(clickBoost.createButton());
         unlockedClickBoost = true;
     }
 
-    if(!autocloneObject.unlockedAutocloning && Math.round(spentMoney*100)/100 >= 0.10){
-        let autoBob = new ActivateButton("Autoclone Bobs", "bobClone", function(){
+    if(!autocloneObject.unlockedAutocloning && round(spentMoney) >= activateButtons.autoclone.cost){
+        autocloneObject.unlockedAutocloning = true;
+
+        let autoBob = new ActivateButton("Autoclone Bobs", "autoclone", function(){
             undoActivateEffects();
             autocloneObject.autocloneActivated = true;
-            autocloneObject.autocloneAmount = 1;
+            autocloneObject.bobAmount = autocloneObject.amount;
             this.disabled = true;
         });
-        console.log(autoBob.createButton());
-        autocloneObject.unlockedAutocloning = true;
-        clickDisplay.append(autoBob.createButton());
+        let autoAlice = new ActivateButton("Autoclone Alices", "autoclone", function(){
+            undoActivateEffects();
+            autocloneObject.autocloneActivated = true;
+            autocloneObject.aliceAmount = autocloneObject.amount;
+            this.disabled = true;
+        });
+        let autoIntern = new ActivateButton("Autoclone Interns", "autoclone", function(){
+            undoActivateEffects();
+            autocloneObject.autocloneActivated = true;
+            autocloneObject.internAmount = autocloneObject.amount;
+            this.disabled = true;
+        });
+        clickDisplay.append(autoBob.createButton(), autoAlice.createButton(), autoIntern.createButton());
     }
 
-    let decreaseAmount = 0;
-    for(i of people){
-        decreaseAmount += i.spendPower * i.amount;
-        decreaseAmount *= i.spendMultiplier;
+    if(!hasInterns && round(spentMoney >= people.intern.cost)){
+        peopleDisplay.append(people.intern.createElement(`${people.intern.name}: multiply autocloning by ${1+people.intern.value*people.intern.amount}`));
+        peopleDisplay.append(people.intern.createCloneButton(() => {
+            document.getElementById(people.intern.name).textContent = `${people.intern.name}: multiply autocloning by ${(1+people.intern.value*people.intern.amount).toFixed(2)}`;
+        }, "Clone"));
+        hasInterns = true;
     }
+
+    let decreaseAmount = people.bob.amount * people.bob.value * (1 + people.alice.amount * people.alice.value);
     decreaseMoney(decreaseAmount/1000 * dt);
     if(autocloneObject.autocloneActivated){
         autoclone(autocloneObject, dt)
-    }
-}
-
-class Person{
-    constructor(spendPower, spendMultiplier, name, amount){
-        this.spendPower = spendPower;
-        this.spendMultiplier = spendMultiplier;
-        this.name = name;
-        this.amount = amount;
     }
 }
 
@@ -210,8 +234,9 @@ class ActivateButton{
 }
 
 function autoclone(ac, dt){
-    people[0].amount += ac.autocloneAmount/1000 * dt;
-    people[1].spendMultiplier += ac.autocloneMultiplier * dt;
+    people.bob.amount += ac.bobAmount/1000 * dt * (1+people.intern.amount * people.intern.value);
+    people.alice.amount += ac.aliceAmount/1000 * dt * (1+people.intern.amount * people.intern.value);
+    people.intern.amount += ac.internAmount/1000 *dt *(1+people.intern.amount * people.intern.value);
 }
 
 function undoActivateEffects(){
@@ -222,6 +247,10 @@ function undoActivateEffects(){
             i.disabled = false;
         }   
     }
+}
+
+function round(s){
+    return Math.round(s*100)/100;
 }
 
 moneyButton.addEventListener("click", () => {
@@ -245,5 +274,13 @@ setInterval(function gameLoop(){
         updateState(timeStep);
     }
 },timeStep);
+
+function devMode(){
+    people.bob.cost = 0.01, people.bob.cloneCost = 0.01;
+    people.alice.cost = 0.01, people.alice.cloneCost = 0.01;
+    people.intern.cost = 0.01;
+    activateButtons.clickUpgrade.cost = 0.01;
+    activateButtons.autoclone.cost = 0.01;
+}
 
 updateDisplay();
