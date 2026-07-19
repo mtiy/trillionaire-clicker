@@ -9,6 +9,13 @@ const moneyButton = document.querySelector(".money-button");
 const messageLog = document.querySelector(".message-log");
 const peopleDisplay = document.querySelector(".people-container");
 const clickDisplay = document.querySelector(".click-upgrade-container");
+const darkModeButton = document.getElementById("darkMode");
+
+darkModeButton.addEventListener("click", () => {
+    document.body.classList.toggle("dark-mode");
+    clickDisplay.classList.toggle("border-dark");
+    peopleDisplay.classList.toggle("border-dark");
+});
 
 const messages = [
     {condition: 0.01, text: "Spent a penny"},
@@ -36,7 +43,9 @@ const messages = [
     {condition: 15000, text: "Autocloning technology now available"},
     {condition: 24695, text: "You've spent the price of a new Honda Civic ($24,695)"},
     {condition: 39075, text: "You've spent the average federal student loan debt ($39,075)"},
-    {condition: 83730, text: "You've spent the median household income ($83,730)"}
+    {condition: 83730, text: "You've spent the median household income ($83,730)"},
+    {condition: 1e5, text: "You can hire some interns to run the autocloner"},
+    {condition: 5e5, text: "Host a job fair to get more interns (increases the longer you leave it activated)"}
 ]
 
 class Person{
@@ -70,13 +79,14 @@ class Person{
 let people = {
     bob: new Person(0.01, "Bob", 0, 1.75, 2.25),
     alice: new Person(0.01, "Alice", 0, 115, 145),
-    intern: new Person(0.01, "Interns", 0, 0.01, null)
+    intern: new Person(0.01, "Interns", 0, 1e5, null)
 }
 
 let hiringFair = {
     activated: false,
     timer: 0,
-    amount: 1
+    amount: 1,
+    cost: 5e5
 }
 
 let hasBob = false;
@@ -85,6 +95,7 @@ let hasAlice = false;
 let hasAliceClone = false;
 let unlockedClickBoost = false;
 let hasInterns = false;
+let hasHiringFair = false;
 
 let activateButtons = {
     clickUpgrade: {
@@ -97,9 +108,17 @@ let activateButtons = {
         removeUpgrade(){
             autocloneObject.bobAmount = 0;
             autocloneObject.aliceAmount = 0;
-            autocloneActivated = false;
+            autocloneObject.autocloneActivated = false;
         },
         cost: 15000
+    },
+    hiring: {
+        removeUpgrade(){
+            hiringFair.timer = 0;
+            hiringFair.amount = 1;
+            hiringFair.activated = false;
+            document.getElementById("hiringFairText").textContent = `Job Fair`;
+        }
     }
 }
 
@@ -193,12 +212,7 @@ function updateState(dt){
             autocloneObject.aliceAmount++;
             this.disabled = true;
         });
-        let autoIntern = new ActivateButton("Hiring Fair", "autoclone", function(){
-            undoActivateEffects();
-            hiringFair.activated = true;
-            this.disabled = true;
-        });
-        clickDisplay.append(autoBob.createButton("autocloneBobText"), autoAlice.createButton("autocloneAliceText"), autoIntern.createButton("hiringFairText"));
+        clickDisplay.append(autoBob.createButton("autocloneBobText"), autoAlice.createButton("autocloneAliceText"));
     }
 
     if(!hasInterns && round(spentMoney >= people.intern.cost)){
@@ -207,6 +221,17 @@ function updateState(dt){
             document.getElementById(people.intern.name).textContent = `${people.intern.name}: Multiply autocloning by ${(1+people.intern.value*people.intern.amount).toFixed(2)}`;
         }, "Hire"));
         hasInterns = true;
+    }
+
+    if(!hasHiringFair && round(spentMoney >= hiringFair.cost)){
+        hasHiringFair = true;
+        let autoIntern = new ActivateButton("Job Fair", "hiring", function(){
+            undoActivateEffects();
+            document.getElementById("hiringFairText").textContent = `Job Fair (${hiringFair.amount} interns / s)`;
+            hiringFair.activated = true;
+            this.disabled = true;
+        });
+        clickDisplay.append(autoIntern.createButton("hiringFairText"));
     }
 
     // Calculate spending per cycle
@@ -233,16 +258,18 @@ class ActivateButton{
         this.name = name;
     }
 
-    createButton(divId){
+    createButton(textId){
         let d = document.createElement("div");
         let b = document.createElement("button");
-        d.textContent = this.upgradeText;
+        let t = document.createElement("span");
+        t.textContent = this.upgradeText;
+        t.id = textId;
         d.classList.add("upgrade-text");
-        d.id = divId;
         b.textContent = "Activate";
         b.addEventListener("click", this.effect);
         b.classList.add("activate-button");
         b.id = this.name;
+        d.append(t);
         d.append(b);
         return d;
     }
@@ -254,9 +281,13 @@ function autoclone(ac, dt){
 }
 
 function hireInterns(dt){
-    if(hiringFair.timer <= 3e5 && hiringFair.timer % 6e3 === 0){
-        document.getElementById("hiringFairText").textContent = `Hiring Fair ${hiringFair.amount/50*100}%`;
+    if(hiringFair.amount < 10 && hiringFair.timer % 6e3 === 0){
         hiringFair.amount += 1;
+        if(hiringFair.amount === 10){
+            document.getElementById("hiringFairText").textContent = `Job Fair (${hiringFair.amount} interns / s - max)`;
+        } else {
+            document.getElementById("hiringFairText").textContent = `Job Fair (${hiringFair.amount} interns / s)`;
+        }
         console.log(hiringFair.amount);
     }
     people.intern.amount += hiringFair.amount/1000 * dt;
@@ -304,6 +335,8 @@ function devMode(){
     people.intern.cost = 0.01;
     activateButtons.clickUpgrade.cost = 0.01;
     activateButtons.autoclone.cost = 0.01;
+    hiringFair.cost = 0.01;
+
 }
 
 updateDisplay();

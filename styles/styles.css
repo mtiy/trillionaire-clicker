@@ -48,6 +48,10 @@
     margin-right: 50px;
 }
 
+.border-dark {
+    border: 1px solid rgb(187, 162, 63);
+}
+
 .horizontal-wrapper {
     display: flex;
     justify-content: center;
@@ -69,3 +73,7 @@
     margin-top: 10px;
 }
 
+.dark-mode {
+    background-color: rgb(28, 28, 28);
+    color: rgb(187, 162, 63);
+}
