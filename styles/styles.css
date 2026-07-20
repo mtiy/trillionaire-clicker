@@ -77,3 +77,62 @@
     background-color: rgb(28, 28, 28);
     color: rgb(187, 162, 63);
 }
+
+.stats-screen-container {
+    margin-top: 20px;
+    padding: 1em;
+    display: flex;
+    justify-content: center;
+}
+
+.shrink-out{
+    animation: 3s forwards shrink;
+}
+
+@keyframes shrink {
+    from {
+        font-size: 40px;
+    } to {
+        font-size: 0;
+    }
+}
+
+.fade-in {
+    animation: 1s forwards fade-in;
+}
+
+@keyframes fade-in {
+    from {
+        opacity: 0;
+    } to {
+        opacity: 1;
+    }
+}
+
+.game-over-text {
+    font-size: 1.5em;
+}
+
+.game-over-box {
+    width: 25vw;
+    border: 2px solid black;
+    padding: 4em 2em;
+    opacity: 0;
+}
+
+.game-over-box-dark {
+    border: 2px solid rgb(187, 162, 63);
+}
+
+.end-game-button {
+    padding: 10px;
+    font-size: 14px;
+    max-width: 10em;
+    cursor: pointer;
+}
+
+.button-container {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 3em;
+}

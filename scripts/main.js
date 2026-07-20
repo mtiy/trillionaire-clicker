@@ -1,7 +1,8 @@
 let money = 1e12;
 let spentMoney = 0;
 let player = {
-    clickStrength: 0.01
+    clickStrength: 0.01,
+    paused: false
 }
 const moneyDisplay = document.querySelector(".money-display");
 const numberFormat1 = new Intl.NumberFormat("en-US", {style: "currency", currency: "USD"});
@@ -10,12 +11,35 @@ const messageLog = document.querySelector(".message-log");
 const peopleDisplay = document.querySelector(".people-container");
 const clickDisplay = document.querySelector(".click-upgrade-container");
 const darkModeButton = document.getElementById("darkMode");
+const devModeButton = document.getElementById("devMode");
+const gameOverDisplay = document.querySelector(".game-over-box");
+const endgameButtons = document.querySelectorAll(".end-game-button");
 
 darkModeButton.addEventListener("click", () => {
     document.body.classList.toggle("dark-mode");
     clickDisplay.classList.toggle("border-dark");
     peopleDisplay.classList.toggle("border-dark");
+    gameOverDisplay.classList.toggle("game-over-box-dark");
 });
+
+// Assign replay button functions
+for(i of endgameButtons){
+    if(i.id === "playAgain"){
+        i.addEventListener("click", () => {
+            console.log("Play Again");
+        });
+    } else if(i.id === "playAgainEasy"){
+        i.addEventListener("click", () => {
+            console.log("Play Again Easy Mode");
+        });
+    } else {
+        i.addEventListener("click", () => {
+            console.log("Play Again Hard");
+        });
+    }
+}
+
+devModeButton.addEventListener("click", devMode);
 
 const messages = [
     {condition: 0.01, text: "Spent a penny"},
@@ -34,18 +58,22 @@ const messages = [
     {condition: 100, text: "$100, wow!"},
     {condition: 115, text: "This is Alice. She helps Bob spend more."},
     {condition: 145, text: "Of course, we can clone her too"},
-    {condition: 203, text: "You've spent the average cost of a dental cleaning ($203)"},
-    {condition: 1013.20, text: "You've spent an average monthly grocery bill for a family of four ($1,013.20)"},
-    {condition: 1100, text: "Your clicks sure aren't doing much, are they?"},
-    {condition: 1413, text: "You have spent the median rent ($1,413)"},
-    {condition: 1600, text: "Let's boost your click power a bit (also applies to cloning)"},
+    {condition: 235, text: "You've spent the average weekly grocery bill for a family of four ($235)"},
+    {condition: 1e3, text: "Your clicks sure aren't doing much, are they?"},
+    {condition: 1100, text: "Let's boost your click power a bit (also applies to cloning)"},
+    {condition: 1413, text: "You've spent the median rent ($1,413)"},
     {condition: 6715, text: "You've spent the average credit card debt ($6,715)"},
-    {condition: 15000, text: "Autocloning technology now available"},
-    {condition: 24695, text: "You've spent the price of a new Honda Civic ($24,695)"},
+    {condition: 13000, text: "Wouldn't it be better if you didn't have to click at all?"},
+    {condition: 15000, text: "Introducing: autocloning (note: you can only have one effect active at a time)"},
     {condition: 39075, text: "You've spent the average federal student loan debt ($39,075)"},
     {condition: 83730, text: "You've spent the median household income ($83,730)"},
     {condition: 1e5, text: "You can hire some interns to run the autocloner"},
-    {condition: 5e5, text: "Host a job fair to get more interns (increases the longer you leave it activated)"}
+    {condition: 403200, text: "You've spent the median price of a home ($403,200)"},
+    {condition: 5e5, text: "Host a job fair to get more interns (increases the longer you leave it activated)"},
+    {condition: 1e6, text: "You've spent a million dollars. Wow!"},
+    {condition: 50e6, text: "A strange man named Mr E appears. He doesn't like to be cloned, but accepts human sacrifices..."},
+    {condition: 99.8e9, text: "You've spent the federal funding for SNAP in 2024 ($99.8 billion)"},
+    {condition: 220e9, text: "You've spent the total medical debt held by the people ($220 billion)"}
 ]
 
 class Person{
@@ -65,21 +93,37 @@ class Person{
         return p;
     }
 
-    createCloneButton(createText, buttonText){
+    createCloneButton(buttonText){
         let cb = document.createElement("button");
         cb.textContent = buttonText;
         cb.addEventListener("click", () => {
             this.amount += player.clickStrength*100;
-            createText();
         });
         return cb;
+    }
+
+    createSacrificeButton(buttonText){
+        let sb = document.createElement("button");
+        sb.textContent = buttonText;
+        sb.addEventListener("click", () => {
+            let arr = [people.bob.amount-1, people.alice.amount-1, people.intern.amount];
+            let expIncrease = arr.reduce((a,b) => a+b, 0) * 1e-4;
+
+            people.misterE.value += expIncrease;
+            people.bob.amount = 1;
+            people.alice.amount = 1;
+            people.intern.amount = 0;
+            document.getElementById(people.misterE.name).textContent = `${people.misterE.name}: Multiply spending by e^${people.misterE.value.toFixed(4)}`;
+        });
+        return sb;
     }
 }
 
 let people = {
     bob: new Person(0.01, "Bob", 0, 1.75, 2.25),
-    alice: new Person(0.01, "Alice", 0, 115, 145),
-    intern: new Person(0.01, "Interns", 0, 1e5, null)
+    alice: new Person(0.01, "Alice", 0, 115, 130),
+    intern: new Person(0.01, "Interns", 0, 1e5, null),
+    misterE: new Person(0, "Mr E", 1, 50e6, null)
 }
 
 let hiringFair = {
@@ -96,13 +140,15 @@ let hasAliceClone = false;
 let unlockedClickBoost = false;
 let hasInterns = false;
 let hasHiringFair = false;
+let hasMisterE = false;
+let unlockedStatsScreen = false;
 
 let activateButtons = {
     clickUpgrade: {
         removeUpgrade(){
             player.clickStrength /= 10;
         },
-        cost: 1600
+        cost: 1100
     },
     autoclone: {
         removeUpgrade(){
@@ -132,7 +178,6 @@ let autocloneObject = {
 function decreaseMoney(amount){
     money -= amount;
     spentMoney += amount;
-    updateDisplay();
 }
 
 function updateDisplay(){
@@ -150,12 +195,15 @@ function updateDisplay(){
         }
     });
 
-    if(autocloneObject.autocloneActivated){
+    if(hasBob){
         document.getElementById(people.bob.name).textContent = `${people.bob.name}s: Spending ${numberFormat1.format(people.bob.value*people.bob.amount)} per second`;
-        document.getElementById(people.alice.name).textContent = `${people.alice.name}s: Multiplying spending by ${(1+people.alice.value*people.alice.amount).toFixed(2)}`;
     }
 
-    if(hiringFair.activated){
+    if(hasAlice){
+        document.getElementById(people.alice.name).textContent = `${people.alice.name}s: Multiply spending by ${(1+people.alice.value*people.alice.amount).toFixed(2)}`;
+    }
+
+    if(hasInterns){
         document.getElementById(people.intern.name).textContent = `${people.intern.name}: Multiply autocloning by ${(1+people.intern.amount*people.intern.value).toFixed(2)}`;
     }
 }
@@ -168,22 +216,18 @@ function updateState(dt){
     }
 
     if(!hasBobClone && round(spentMoney) >= people.bob.cloneCost){
-        peopleDisplay.append(people.bob.createCloneButton(() => {
-            document.getElementById("Bob").textContent = `${people.bob.name}s: Spending ${numberFormat1.format(people.bob.value*people.bob.amount)} per second`;
-        }, "Clone"));
+        peopleDisplay.append(people.bob.createCloneButton("Clone"));
         hasBobClone = true;
     }
 
     if(!hasAlice && round(spentMoney) >= people.alice.cost){
         people.alice.amount++;
-        peopleDisplay.append(people.alice.createElement(`${people.alice.name}: Multiplying spending by ${1 + people.alice.value*people.alice.amount}`));
+        peopleDisplay.append(people.alice.createElement(`${people.alice.name}: Multiply spending by ${1 + people.alice.value*people.alice.amount}`));
         hasAlice = true;
     }
 
     if(!hasAliceClone && round(spentMoney) >= people.alice.cloneCost){
-        peopleDisplay.append(people.alice.createCloneButton(() => {
-            document.getElementById("Alice").textContent = `${people.alice.name}s: Multiplying spending by ${(1 + people.alice.value*people.alice.amount).toFixed(2)}`; 
-        }, "Clone"));
+        peopleDisplay.append(people.alice.createCloneButton("Clone"));
         hasAliceClone = true;
     }
 
@@ -215,15 +259,13 @@ function updateState(dt){
         clickDisplay.append(autoBob.createButton("autocloneBobText"), autoAlice.createButton("autocloneAliceText"));
     }
 
-    if(!hasInterns && round(spentMoney >= people.intern.cost)){
+    if(!hasInterns && round(spentMoney) >= people.intern.cost){
         peopleDisplay.append(people.intern.createElement(`${people.intern.name}: Multiply autocloning by ${1+people.intern.value*people.intern.amount}`));
-        peopleDisplay.append(people.intern.createCloneButton(() => {
-            document.getElementById(people.intern.name).textContent = `${people.intern.name}: Multiply autocloning by ${(1+people.intern.value*people.intern.amount).toFixed(2)}`;
-        }, "Hire"));
+        peopleDisplay.append(people.intern.createCloneButton("Hire"));
         hasInterns = true;
     }
 
-    if(!hasHiringFair && round(spentMoney >= hiringFair.cost)){
+    if(!hasHiringFair && round(spentMoney) >= hiringFair.cost){
         hasHiringFair = true;
         let autoIntern = new ActivateButton("Job Fair", "hiring", function(){
             undoActivateEffects();
@@ -234,20 +276,37 @@ function updateState(dt){
         clickDisplay.append(autoIntern.createButton("hiringFairText"));
     }
 
-    // Calculate spending per cycle
-    let decreaseAmount = people.bob.amount * people.bob.value * (1 + people.alice.amount * people.alice.value);
+    if(!hasMisterE && round(spentMoney) >= people.misterE.cost){
+        peopleDisplay.append(people.misterE.createElement(`${people.misterE.name}: Multiply spending by e^${people.misterE.value.toFixed(4)}`));
+        peopleDisplay.append(people.misterE.createSacrificeButton("Sacrifice"));
+        hasMisterE = true;
+    }
+
+    let decreaseAmount = people.bob.amount * people.bob.value * (1 + people.alice.amount * people.alice.value) * Math.E**(people.misterE.value);
+    // Check if game is over
+    if(money - decreaseAmount/1000*dt <= 0){
+        player.paused = true;
+        money = 0.01;
+        updateDisplay();
+        peopleDisplay.hidden = true;
+        clickDisplay.hidden = true;
+        messageLog.hidden = true;
+        moneyButton.removeEventListener("click", manualSpend);
+        moneyButton.addEventListener("click", endGame);
+        return;
+    }
     decreaseMoney(decreaseAmount/1000 * dt);
 
-    // Calculate autocloning per cycle
     if(autocloneObject.autocloneActivated){
         autoclone(autocloneObject, dt);
     }
 
-    // Calculate hiring per cycle
     if(hiringFair.activated){
         hiringFair.timer += dt;
         hireInterns(dt);
     }
+
+    updateDisplay();
 }
 
 // effect is a function we will call on button click
@@ -307,14 +366,33 @@ function round(s){
     return Math.round(s*100)/100;
 }
 
-moneyButton.addEventListener("click", () => {
-    decreaseMoney(player.clickStrength);
-});
+function manualSpend(){
+    money -= player.clickStrength;
+    spentMoney += player.clickStrength;
+    updateDisplay();
+}
 
+moneyButton.addEventListener("click", manualSpend);
+
+function endGame(){
+    money = 0;
+    updateDisplay();
+    moneyButton.hidden = true;
+    moneyDisplay.classList.add("shrink-out");
+    setTimeout(function displayOptions(){
+        gameOverDisplay.hidden = false;
+        gameOverDisplay.classList.add("fade-in");
+    },5000);
+}
+
+// Game Loop
 let lastTime = null;
 let timeStep = 25;
 let accumulatedLag = 0;
 setInterval(function gameLoop(){
+    if(player.paused){
+        return;
+    }
     const currentTime = performance.now();
     if(lastTime === null){
         lastTime = performance.now();
@@ -330,13 +408,11 @@ setInterval(function gameLoop(){
 },timeStep);
 
 function devMode(){
-    people.bob.cost = 0.01, people.bob.cloneCost = 0.01;
-    people.alice.cost = 0.01, people.alice.cloneCost = 0.01;
-    people.intern.cost = 0.01;
-    activateButtons.clickUpgrade.cost = 0.01;
-    activateButtons.autoclone.cost = 0.01;
-    hiringFair.cost = 0.01;
-
+    people.bob.cost = 0, people.bob.cloneCost = 0;
+    people.alice.cost = 0, people.alice.cloneCost = 0;
+    people.intern.cost = 0;
+    people.misterE.cost = 0;
+    activateButtons.clickUpgrade.cost = 0;
+    activateButtons.autoclone.cost = 0;
+    hiringFair.cost = 0;
 }
-
-updateDisplay();
