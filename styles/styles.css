@@ -114,7 +114,8 @@
 }
 
 .game-over-box {
-    width: 25vw;
+    min-width: 25vw;
+    max-width: 40vw;
     border: 2px solid black;
     padding: 4em 2em;
     opacity: 0;
@@ -126,8 +127,9 @@
 
 .end-game-button {
     padding: 10px;
-    font-size: 14px;
-    max-width: 10em;
+    font-size: 1.2rem;
+    max-width: 10rem;
+    min-width: 10rem;
     cursor: pointer;
 }
 
