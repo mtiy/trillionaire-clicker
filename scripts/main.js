@@ -11,6 +11,7 @@ function initializeGame(){
         spentMoney: 0,
         clickStrength: 0.01,
         paused: false,
+        hardMode: false,
         unlocks: {
             hasBob: false,
             hasBobClone: false,
@@ -84,14 +85,14 @@ function initializeGame(){
                 hiringFair.amount = 1;
                 hiringFair.activated = false;
                 document.getElementById("hiringFairText").textContent = `Job Fair`;
-            }
+            },
+            cost: 5e5
         }
     };
     hiringFair = {
         activated: false,
         timer: 0,
-        amount: 1,
-        cost: 5e5
+        amount: 1
     };
     autocloneObject = {
         unlockedAutocloning: false,
@@ -149,6 +150,13 @@ darkModeButton.addEventListener("click", () => {
 });
 
 devModeButton.addEventListener("click", devMode);
+
+document.getElementById("hardMode").addEventListener("click", () => {
+    state.hardMode = true;
+});
+
+document.getElementById("save").addEventListener("click", saveGame);
+document.getElementById("load").addEventListener("click", loadGame);
 
 class Person{
     constructor(value, name, amount, cost, cloneCost){
@@ -213,50 +221,50 @@ function updateDisplay(){
         }
     });
 
-    if(state.hasBob){
+    if(state.unlocks.hasBob){
         document.getElementById(people.bob.name).textContent = `${people.bob.name}s: Spending ${numberFormat1.format(people.bob.value*people.bob.amount)} per second`;
     }
 
-    if(state.hasAlice){
+    if(state.unlocks.hasAlice){
         document.getElementById(people.alice.name).textContent = `${people.alice.name}s: Multiply spending by ${(1+people.alice.value*people.alice.amount).toFixed(2)}`;
     }
 
-    if(state.hasInterns){
+    if(state.unlocks.hasInterns){
         document.getElementById(people.intern.name).textContent = `${people.intern.name}: Multiply autocloning by ${(1+people.intern.amount*people.intern.value).toFixed(2)}`;
     }
 }
 
 function updateState(dt){
-    if(!state.hasBob && round(state.spentMoney) >= people.bob.cost){
+    if(!state.unlocks.hasBob && round(state.spentMoney) >= people.bob.cost){
         people.bob.amount++;
         peopleDisplay.append(people.bob.createElement(`${people.bob.name}: Spending ${numberFormat1.format(people.bob.value*people.bob.amount)} per second`));
-        state.hasBob = true;
+        state.unlocks.hasBob = true;
     }
 
-    if(!state.hasBobClone && round(state.spentMoney) >= people.bob.cloneCost){
+    if(!state.unlocks.hasBobClone && round(state.spentMoney) >= people.bob.cloneCost){
         peopleDisplay.append(people.bob.createCloneButton("Clone"));
-        state.hasBobClone = true;
+        state.unlocks.hasBobClone = true;
     }
 
-    if(!state.hasAlice && round(state.spentMoney) >= people.alice.cost){
+    if(!state.unlocks.hasAlice && round(state.spentMoney) >= people.alice.cost){
         people.alice.amount++;
         peopleDisplay.append(people.alice.createElement(`${people.alice.name}: Multiply spending by ${1 + people.alice.value*people.alice.amount}`));
-        state.hasAlice = true;
+        state.unlocks.hasAlice = true;
     }
 
-    if(!state.hasAliceClone && round(state.spentMoney) >= people.alice.cloneCost){
+    if(!state.unlocks.hasAliceClone && round(state.spentMoney) >= people.alice.cloneCost){
         peopleDisplay.append(people.alice.createCloneButton("Clone"));
-        state.hasAliceClone = true;
+        state.unlocks.hasAliceClone = true;
     }
 
-    if(!state.unlockedClickBoost && round(state.spentMoney) >= activateButtons.clickUpgrade.cost){
+    if(!state.unlocks.unlockedClickBoost && round(state.spentMoney) >= activateButtons.clickUpgrade.cost){
         let clickBoost = new ActivateButton("Boost Click Strength", "clickUpgrade", function() {
             undoActivateEffects();
             state.clickStrength *= 10;
             this.disabled = true;
         });
         clickDisplay.append(clickBoost.createButton());
-        state.unlockedClickBoost = true;
+        state.unlocks.unlockedClickBoost = true;
     }
 
     if(!autocloneObject.unlockedAutocloning && round(state.spentMoney) >= activateButtons.autoclone.cost){
@@ -277,14 +285,14 @@ function updateState(dt){
         clickDisplay.append(autoBob.createButton("autocloneBobText"), autoAlice.createButton("autocloneAliceText"));
     }
 
-    if(!state.hasInterns && round(state.spentMoney) >= people.intern.cost){
+    if(!state.unlocks.hasInterns && round(state.spentMoney) >= people.intern.cost){
         peopleDisplay.append(people.intern.createElement(`${people.intern.name}: Multiply autocloning by ${1+people.intern.value*people.intern.amount}`));
         peopleDisplay.append(people.intern.createCloneButton("Hire"));
-        state.hasInterns = true;
+        state.unlocks.hasInterns = true;
     }
 
-    if(!state.hasHiringFair && round(state.spentMoney) >= hiringFair.cost){
-        state.hasHiringFair = true;
+    if(!state.unlocks.hasHiringFair && round(state.spentMoney) >= activateButtons.hiring.cost){
+        state.unlocks.hasHiringFair = true;
         let autoIntern = new ActivateButton("Job Fair", "hiring", function(){
             undoActivateEffects();
             document.getElementById("hiringFairText").textContent = `Job Fair (${hiringFair.amount} interns / s)`;
@@ -294,13 +302,14 @@ function updateState(dt){
         clickDisplay.append(autoIntern.createButton("hiringFairText"));
     }
 
-    if(!state.hasMisterE && round(state.spentMoney) >= people.misterE.cost){
+    if(!state.unlocks.hasMisterE && round(state.spentMoney) >= people.misterE.cost){
         peopleDisplay.append(people.misterE.createElement(`${people.misterE.name}: Multiply spending by e^${people.misterE.value.toFixed(4)}`));
         peopleDisplay.append(people.misterE.createSacrificeButton("Sacrifice"));
-        state.hasMisterE = true;
+        state.unlocks.hasMisterE = true;
     }
 
     let decreaseAmount = people.bob.amount * people.bob.value * (1 + people.alice.amount * people.alice.value) * Math.E**(people.misterE.value);
+
     // Check if game is over
     if(state.money - decreaseAmount/1000*dt <= 0){
         state.paused = true;
@@ -320,8 +329,13 @@ function updateState(dt){
         });
         return;
     }
+
     decreaseMoney(decreaseAmount/1000 * dt);
-    state.money = compoundInterest(state.money, 0.07, dt*3.17e-11);
+
+    // Add interest if hard mode is active
+    if(state.hardMode){
+        state.money = compoundInterest(state.money, 0.05, dt/1000/25);
+    }
 
     if(autocloneObject.autocloneActivated){
         autoclone(autocloneObject, dt);
@@ -430,7 +444,11 @@ function endGame(){
         } else {
             b.textContent = `Play Again on Hard Mode`;
             b.addEventListener("click", () => {
-                console.log("Initialize Hard Mode");
+                initializeGame();
+                resetDisplay();
+                state.paused = true;
+                lastTime = null;
+                state.hardMode = true;
             });
         }
         endgameButtons.append(b);
@@ -466,7 +484,49 @@ function devMode(){
     people.misterE.cost = 0;
     activateButtons.clickUpgrade.cost = 0;
     activateButtons.autoclone.cost = 0;
-    hiringFair.cost = 0;
+    activateButtons.hiring.cost = 0;
+}
+
+function saveGame(){
+    localStorage.clear();
+
+    let save = {
+        state: state,
+        messages: messages,
+        people: people,
+        activateButtons: activateButtons
+    }
+
+    console.log(save);
+
+    localStorage.setItem("trillionaireClickerSave", JSON.stringify(save));
+}
+
+function loadGame(){
+    initializeGame();
+    resetDisplay();
+    let save = JSON.parse(localStorage.getItem("trillionaireClickerSave"));
+
+    state = save.state;
+    messages = save.messages;
+
+    people = {
+        bob: new Person(save.people.bob.value, save.people.bob.name, save.people.bob.amount, save.people.bob.cost, save.people.bob.cloneCost),
+        alice: new Person(save.people.alice.value, save.people.alice.name, save.people.alice.amount, save.people.alice.cost, save.people.alice.cloneCost),
+        intern: new Person(save.people.intern.value, save.people.intern.name, save.people.intern.amount, save.people.intern.cost, save.people.intern.cloneCost),
+        misterE: new Person(save.people.misterE.value, save.people.misterE.name, save.people.misterE.amount, save.people.misterE.cost, save.people.misterE.cloneCost)
+    };
+
+    for(ab in activateButtons){
+        activateButtons[ab].cost = save.activateButtons[ab].cost;
+    }
+
+    for(i in state.unlocks){
+        state.unlocks[i] = false;
+    }
+
+    people.bob.amount--;
+    people.alice.amount--;
 }
 
 initializeGame();
