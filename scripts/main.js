@@ -59,8 +59,8 @@ function initializeGame(){
         {condition: 220e9, text: "You've spent the total medical debt held by the people ($220 billion)"}
     ];
     people = {
-        bob: new Person(0.01, "Bob", 0, 1.75, 2.25),
-        alice: new Person(0.01, "Alice", 0, 115, 130),
+        bob: new Person(0, "Bob", 1, 1.75, 2.25),
+        alice: new Person(0, "Alice", 1, 115, 130),
         intern: new Person(0.01, "Interns", 0, 1e5, null),
         misterE: new Person(0, "Mr E", 1, 50e6, null)
     };
@@ -155,6 +155,11 @@ document.getElementById("hardMode").addEventListener("click", () => {
     state.hardMode = true;
 });
 
+document.getElementById("reset").addEventListener("click", () => {
+    initializeGame();
+    resetDisplay();
+});
+
 document.getElementById("save").addEventListener("click", saveGame);
 document.getElementById("load").addEventListener("click", loadGame);
 
@@ -236,7 +241,7 @@ function updateDisplay(){
 
 function updateState(dt){
     if(!state.unlocks.hasBob && round(state.spentMoney) >= people.bob.cost){
-        people.bob.amount++;
+        people.bob.value = 0.01;
         peopleDisplay.append(people.bob.createElement(`${people.bob.name}: Spending ${numberFormat1.format(people.bob.value*people.bob.amount)} per second`));
         state.unlocks.hasBob = true;
     }
@@ -247,7 +252,7 @@ function updateState(dt){
     }
 
     if(!state.unlocks.hasAlice && round(state.spentMoney) >= people.alice.cost){
-        people.alice.amount++;
+        people.alice.value = 0.01;
         peopleDisplay.append(people.alice.createElement(`${people.alice.name}: Multiply spending by ${1 + people.alice.value*people.alice.amount}`));
         state.unlocks.hasAlice = true;
     }
@@ -344,6 +349,12 @@ function updateState(dt){
     if(hiringFair.activated){
         hiringFair.timer += dt;
         hireInterns(dt);
+    }
+
+    if(totalTime - lastSave >= 5000){
+        saveGame();
+        lastSave = totalTime;
+        console.log("Game Saved!");
     }
 
     updateDisplay();
@@ -459,6 +470,8 @@ function endGame(){
 let lastTime = null;
 let timeStep = 25;
 let accumulatedLag = 0;
+let totalTime = 0;
+let lastSave = 0;
 setInterval(function gameLoop(){
     if(state.paused){
         return;
@@ -468,6 +481,7 @@ setInterval(function gameLoop(){
         lastTime = performance.now();
     }
     const deltaTime = currentTime - lastTime;
+    totalTime += deltaTime;
     lastTime = currentTime;
     accumulatedLag += deltaTime;
 
@@ -497,12 +511,11 @@ function saveGame(){
         activateButtons: activateButtons
     }
 
-    console.log(save);
-
     localStorage.setItem("trillionaireClickerSave", JSON.stringify(save));
 }
 
 function loadGame(){
+    console.log("Loaded");
     initializeGame();
     resetDisplay();
     let save = JSON.parse(localStorage.getItem("trillionaireClickerSave"));
@@ -524,9 +537,13 @@ function loadGame(){
     for(i in state.unlocks){
         state.unlocks[i] = false;
     }
-
-    people.bob.amount--;
-    people.alice.amount--;
 }
+
+// Loads in the game state 
+window.onload = (event) => {
+    if(localStorage.getItem("trillionaireClickerSave") != null){
+        loadGame();
+    }
+};
 
 initializeGame();
