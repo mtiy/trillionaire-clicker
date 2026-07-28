@@ -5,6 +5,22 @@ let activateButtons;
 let hiringFair;
 let autocloneObject;
 
+// Used for formatting our money
+const numberFormat1 = new Intl.NumberFormat("en-US", {style: "currency", currency: "USD"});
+
+const moneyDisplay = document.querySelector(".money-display");
+const moneyButton = document.querySelector(".money-button");
+const messageLog = document.querySelector(".message-log");
+const peopleDisplay = document.querySelector(".people-container");
+const clickDisplay = document.querySelector(".click-upgrade-container");
+const darkModeButton = document.getElementById("darkMode");
+const devModeButton = document.getElementById("devMode");
+const gameOverDisplay = document.querySelector(".game-over-box");
+const endgameButtons = document.querySelector(".button-container");
+const startModal = document.getElementById("startScreen");
+const hardModeModal = document.getElementById("hardModeStartScreen");
+
+// Initialize all states and conditions for the purpose of starting a new game
 function initializeGame(){
     state = {
         money: 1e12,
@@ -32,11 +48,11 @@ function initializeGame(){
         {condition: 0.50, text: "Two quarters"},
         {condition: 0.75, text: "Three quarters!!"},
         {condition: 1.00, text: "Your first dollar"},
-        {condition: 1.25, text: "Wow, this is getting kind of tiring, huh?"},
-        {condition: 1.50, text: "Let's find someone to spend this for you"},
-        {condition: 1.75, text: "This is Bob. He can spend money for you automatically."},
-        {condition: 2.00, text: "He's not very fast though"},
-        {condition: 2.25, text: "Luckily, we can clone him"},
+        {condition: 1.05, text: "Wow, this is getting kind of tiring, huh?"},
+        {condition: 1.15, text: "Let's find someone to spend this for you"},
+        {condition: 1.25, text: "This is Bob. He can spend money for you automatically."},
+        {condition: 1.40, text: "He's not very fast though"},
+        {condition: 1.50, text: "Luckily, we can clone him"},
         {condition: 4.22, text: "You've spent enough to buy 1 gallon of milk ($4.22 average)"},
         {condition: 100, text: "$100, wow!"},
         {condition: 115, text: "This is Alice. She helps Bob spend more."},
@@ -45,7 +61,7 @@ function initializeGame(){
         {condition: 1e3, text: "Your clicks sure aren't doing much, are they?"},
         {condition: 1100, text: "Let's boost your click power a bit (also applies to cloning)"},
         {condition: 1413, text: "You've spent the median rent ($1,413)"},
-        {condition: 6715, text: "You've spent the average credit card debt ($6,715)"},
+        {condition: 11800, text: "You've spent the current cost of a Rolex GMT-Master II ($11,800)"},
         {condition: 13000, text: "Wouldn't it be better if you didn't have to click at all?"},
         {condition: 15000, text: "Introducing: autocloning (note: you can only have one effect active at a time)"},
         {condition: 39075, text: "You've spent the average federal student loan debt ($39,075)"},
@@ -53,13 +69,19 @@ function initializeGame(){
         {condition: 1e5, text: "You can hire some interns to run the autocloner"},
         {condition: 403200, text: "You've spent the median price of a home ($403,200)"},
         {condition: 5e5, text: "Host a job fair to get more interns (increases the longer you leave it activated)"},
-        {condition: 1e6, text: "You've spent a million dollars. Wow!"},
+        {condition: 1e6, text: "You've spent a million dollars. A private jet can cost that much - per year!"},
+        {condition: 28e6, text: "You've spent the auction price of Dorothy's Ruby Slippers from The Wizard of Oz ($28 million)"},
         {condition: 50e6, text: "A strange man named Mr E appears. He doesn't like to be cloned, but accepts human sacrifices..."},
+        {condition: 56e6, text: "You've spent the number of people who die each year (56 million)"},
+        {condition: 168.2e6, text: "You've spent the sale price of The Scream by Edvard Munch ($168.2 million)"},
+        {condition: 8.3e9, text: "You've spent the estimated population of Earth (8.3 billion)"},
+        {condition: 13.8e9, text: "You've spent the age of the Universe (13.8 billion years)"},
         {condition: 99.8e9, text: "You've spent the federal funding for SNAP in 2024 ($99.8 billion)"},
-        {condition: 220e9, text: "You've spent the total medical debt held by the people ($220 billion)"}
+        {condition: 220e9, text: "You've spent the total medical debt in the US ($220 billion)"},
+        {condition: 400e9, text: "You've spent the high estimate for stars in the Milky Way (400 billion)"}
     ];
     people = {
-        bob: new Person(0, "Bob", 1, 1.75, 2.25),
+        bob: new Person(0, "Bob", 1, 1.25, 1.50),
         alice: new Person(0, "Alice", 1, 115, 130),
         intern: new Person(0.01, "Interns", 0, 1e5, null),
         misterE: new Person(0, "Mr E", 1, 50e6, null)
@@ -68,8 +90,11 @@ function initializeGame(){
         clickUpgrade: {
             removeUpgrade(){
                 state.clickStrength = 0.01;
+                activateButtons.clickUpgrade.activated = false;
+                document.getElementById("clickStrengthText").textContent = `Boost Click Strength`;
             },
-            cost: 1100
+            cost: 1100,
+            activated: false
         },
         autoclone: {
             removeUpgrade(){
@@ -131,17 +156,6 @@ function resetDisplay(){
     messageLog.hidden = false;
 }
 
-const moneyDisplay = document.querySelector(".money-display");
-const numberFormat1 = new Intl.NumberFormat("en-US", {style: "currency", currency: "USD"});
-const moneyButton = document.querySelector(".money-button");
-const messageLog = document.querySelector(".message-log");
-const peopleDisplay = document.querySelector(".people-container");
-const clickDisplay = document.querySelector(".click-upgrade-container");
-const darkModeButton = document.getElementById("darkMode");
-const devModeButton = document.getElementById("devMode");
-const gameOverDisplay = document.querySelector(".game-over-box");
-const endgameButtons = document.querySelector(".button-container");
-
 darkModeButton.addEventListener("click", () => {
     document.body.classList.toggle("dark-mode");
     clickDisplay.classList.toggle("border-dark");
@@ -149,19 +163,25 @@ darkModeButton.addEventListener("click", () => {
     gameOverDisplay.classList.toggle("game-over-box-dark");
 });
 
-devModeButton.addEventListener("click", devMode);
-
-document.getElementById("hardMode").addEventListener("click", () => {
-    state.hardMode = true;
-});
-
 document.getElementById("reset").addEventListener("click", () => {
     initializeGame();
     resetDisplay();
+    saveGame();
+    startModal.showModal();
 });
 
-document.getElementById("save").addEventListener("click", saveGame);
-document.getElementById("load").addEventListener("click", loadGame);
+// Modal buttons
+document.getElementById("startButton").addEventListener("click", () => {
+    startModal.close();
+});
+
+document.getElementById("hardModeButton").addEventListener("click", () => {
+    people.bob.cost = 0, people.bob.cloneCost = 0;
+    people.alice.cost = 0, people.alice.cloneCost = 0;
+    activateButtons.clickUpgrade.cost = 0;
+    hardModeModal.close();
+    state.paused = false;
+});
 
 class Person{
     constructor(value, name, amount, cost, cloneCost){
@@ -186,12 +206,14 @@ class Person{
         cb.addEventListener("click", () => {
             this.amount += state.clickStrength*100;
         });
+        cb.classList.add("clone-button");
         return cb;
     }
 
     createSacrificeButton(buttonText){
         let sb = document.createElement("button");
         sb.textContent = buttonText;
+        sb.classList.add("clone-button");
         sb.addEventListener("click", () => {
             let arr = [people.bob.amount-1, people.alice.amount-1, people.intern.amount];
             let expIncrease = arr.reduce((a,b) => a+b, 0) * 1e-4;
@@ -265,10 +287,10 @@ function updateState(dt){
     if(!state.unlocks.unlockedClickBoost && round(state.spentMoney) >= activateButtons.clickUpgrade.cost){
         let clickBoost = new ActivateButton("Boost Click Strength", "clickUpgrade", function() {
             undoActivateEffects();
-            state.clickStrength *= 10;
+            activateButtons.clickUpgrade.activated = true;
             this.disabled = true;
         });
-        clickDisplay.append(clickBoost.createButton());
+        clickDisplay.append(clickBoost.createButton("clickStrengthText"));
         state.unlocks.unlockedClickBoost = true;
     }
 
@@ -351,6 +373,10 @@ function updateState(dt){
         hireInterns(dt);
     }
 
+    if(activateButtons.clickUpgrade.activated){
+        boostClickPower(dt);
+    }
+
     if(totalTime - lastSave >= 5000){
         saveGame();
         lastSave = totalTime;
@@ -400,6 +426,13 @@ function hireInterns(dt){
         }
     }
     people.intern.amount += hiringFair.amount/1000 * dt;
+}
+
+function boostClickPower(dt){
+    if(state.clickStrength <= 1){
+        state.clickStrength += (1/600)/1000 * dt;
+        document.getElementById("clickStrengthText").textContent = `Click Strength: ${state.clickStrength.toFixed(2)} / 1`;
+    }
 }
 
 function undoActivateEffects(){
@@ -460,6 +493,7 @@ function endGame(){
                 state.paused = true;
                 lastTime = null;
                 state.hardMode = true;
+                hardModeModal.showModal();
             });
         }
         endgameButtons.append(b);
@@ -515,7 +549,6 @@ function saveGame(){
 }
 
 function loadGame(){
-    console.log("Loaded");
     initializeGame();
     resetDisplay();
     let save = JSON.parse(localStorage.getItem("trillionaireClickerSave"));
@@ -543,7 +576,8 @@ function loadGame(){
 window.onload = (event) => {
     if(localStorage.getItem("trillionaireClickerSave") != null){
         loadGame();
+    } else {
+        startModal.showModal();
+        initializeGame();
     }
-};
-
-initializeGame();
+}

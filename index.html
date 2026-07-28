@@ -10,12 +10,8 @@
 <body>
     <div class="options-banner">
         <div>
-            <button id="darkMode">Dark Mode</button>
-            <button id="devMode">Dev Mode</button>
-            <button id="hardMode">Hard Mode</button>
-            <button id="save">Save</button>
-            <button id="load">Load</button>
-            <button id="reset">Restart</button>
+            <button id="darkMode" class="options-button">Dark Mode</button>
+            <button id="reset" class="options-button">Restart</button>
         </div>
     </div>
     <div class="horizontal-wrapper">
@@ -33,6 +29,18 @@
             <div class="button-container"></div>
         </div>
     </div>
-
+    <dialog id="startScreen" class="modal-popup">
+        Hello, and welcome to Trillionaire Clicker. Your goal in this game is to spend 1 trillion dollars. You can do this by clicking that big
+        spend button there. Well, have fun!
+        <br />
+        <button id="startButton" class="modal-button">Alrighty then</button>
+    </dialog>
+    <dialog id="hardModeStartScreen" class="modal-popup">
+        Welcome to hard mode! Now the money gains compound interest, meaning it will increase every tick. The larger the number gets, the more it
+        will increase, so make sure to get your bobs and alices up and running ASAP! To make things easier, you will start with them unlocked, as
+        well as click boost.
+        <br />
+        <button id="hardModeButton" class="modal-button">Okay...</button>
+    </dialog>
 </body>
 </html>

@@ -2,6 +2,11 @@
     font-size: 40px;
 }
 
+body {
+    background-color: white;
+    color: black;
+}
+
 .money-container {
     display: flex;
     flex-direction: column;
@@ -55,7 +60,7 @@
 .horizontal-wrapper {
     display: flex;
     justify-content: center;
-    margin-top: 100px;
+    margin-top: 10vh;
 }
 
 .people {
@@ -70,7 +75,7 @@
 .upgrade-text {
     display: flex;
     justify-content: space-between;
-    margin-top: 10px;
+    margin-top: 40px;
 }
 
 .dark-mode {
@@ -137,4 +142,35 @@
     display: flex;
     justify-content: space-between;
     margin-top: 3em;
+}
+
+.options-banner {
+    display: flex;
+    justify-content: center;
+    margin-top: 5vh;
+}
+
+.options-button {
+    margin: 0 1em;
+    cursor: pointer;
+    padding: 1em;
+    min-width: 10em;
+}
+
+.clone-button {
+    padding: 5px 10px;
+    margin-top: 5px;
+    cursor: pointer;
+}
+
+.modal-popup {
+    max-width: 500px;
+    font-size: 1.5em;
+    padding: 2em;
+}
+
+.modal-button {
+    padding: 0.5em 1em;
+    font-size: 1em;
+    margin-top: 1em;
 }
