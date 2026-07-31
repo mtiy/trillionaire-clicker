@@ -19,6 +19,7 @@ const gameOverDisplay = document.querySelector(".game-over-box");
 const endgameButtons = document.querySelector(".button-container");
 const startModal = document.getElementById("startScreen");
 const hardModeModal = document.getElementById("hardModeStartScreen");
+const restartConfirmModal = document.getElementById("restartConfirm");
 
 // Initialize all states and conditions for the purpose of starting a new game
 function initializeGame(){
@@ -156,18 +157,25 @@ function resetDisplay(){
     messageLog.hidden = false;
 }
 
+// Dark mode
 darkModeButton.addEventListener("click", () => {
+    if(darkModeButton.textContent === "Dark Mode"){
+        darkModeButton.textContent = "Light Mode";
+        
+    } else {
+        darkModeButton.textContent = "Dark Mode";
+    }
     document.body.classList.toggle("dark-mode");
     clickDisplay.classList.toggle("border-dark");
     peopleDisplay.classList.toggle("border-dark");
     gameOverDisplay.classList.toggle("game-over-box-dark");
+    document.querySelectorAll(".modal-popup").forEach((e) => {
+        e.classList.toggle("dark-modal");
+    });
 });
 
 document.getElementById("reset").addEventListener("click", () => {
-    initializeGame();
-    resetDisplay();
-    saveGame();
-    startModal.showModal();
+    restartConfirmModal.showModal();
 });
 
 // Modal buttons
@@ -181,6 +189,18 @@ document.getElementById("hardModeButton").addEventListener("click", () => {
     activateButtons.clickUpgrade.cost = 0;
     hardModeModal.close();
     state.paused = false;
+});
+
+document.getElementById("restartYes").addEventListener("click", () => {
+    restartConfirmModal.close();
+    initializeGame();
+    resetDisplay();
+    saveGame();
+    startModal.showModal();
+});
+
+document.getElementById("restartNo").addEventListener("click", () => {
+    restartConfirmModal.close();
 });
 
 class Person{
@@ -460,10 +480,16 @@ function manualSpend(){
     updateDisplay();
 }
 
+// Creates game over text and handles end of game states (hard mode or normal)
 function endGame(){
-    document.querySelector(".game-over-text").textContent = `Congratulations! You did it! 
-    You can play again, with a couple different options. Or you can just go tell all your friends about 
-    how you won Trillionaire Clicker. Good work!`;
+    if(state.hardMode){
+        document.querySelector(".game-over-text").textContent = `Woah. Not only did you beat Trillionaire Clicker. You beat it on hard mode. I am 
+        very impressed. You've earned the title of Ultimate Trillionaire Clicker Master. Wear it with pride.`;
+    } else {
+        document.querySelector(".game-over-text").textContent = `Congratulations! You did it! 
+        You can play again, with a couple different options. Or you can just go tell all your friends about 
+        how you won Trillionaire Clicker. Good work!`;
+    }
 
     gameOverDisplay.hidden = false;
     gameOverDisplay.classList.add("fade-in");

@@ -2,6 +2,20 @@
     font-size: 40px;
 }
 
+button {
+    background-color: rgb(48, 37, 37);
+    color: rgb(187, 187, 186);
+}
+
+button:hover {
+    background-color: rgba(48, 37, 37, 0.836);
+    color: rgb(187, 187, 186);
+}
+
+button:disabled {
+    background-color: rgba(48, 37, 37, 0.836);
+}
+
 body {
     background-color: white;
     color: black;
@@ -155,6 +169,9 @@ body {
     cursor: pointer;
     padding: 1em;
     min-width: 10em;
+    background-color: rgb(48, 37, 37);
+    color: rgb(187, 187, 186);
+    border: thick double gray;
 }
 
 .clone-button {
@@ -167,6 +184,12 @@ body {
     max-width: 500px;
     font-size: 1.5em;
     padding: 2em;
+}
+
+.dark-modal {
+    background-color: rgb(28, 28, 28);
+    color: rgb(187, 162, 63);
+    border: 2px solid rgb(177, 175, 175);
 }
 
 .modal-button {
