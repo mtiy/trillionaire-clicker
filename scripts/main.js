@@ -20,6 +20,7 @@ const endgameButtons = document.querySelector(".button-container");
 const startModal = document.getElementById("startScreen");
 const hardModeModal = document.getElementById("hardModeStartScreen");
 const restartConfirmModal = document.getElementById("restartConfirm");
+const root = document.querySelector(":root");
 
 // Initialize all states and conditions for the purpose of starting a new game
 function initializeGame(){
@@ -46,44 +47,30 @@ function initializeGame(){
         {condition: 0.05, text: "You have spent one nickel"},
         {condition: 0.10, text: "Now a dime"},
         {condition: 0.25, text: "A whole quarter"},
-        {condition: 0.50, text: "Two quarters"},
-        {condition: 0.75, text: "Three quarters!!"},
-        {condition: 1.00, text: "Your first dollar"},
-        {condition: 1.05, text: "Wow, this is getting kind of tiring, huh?"},
-        {condition: 1.15, text: "Let's find someone to spend this for you"},
-        {condition: 1.25, text: "This is Bob. He can spend money for you automatically."},
-        {condition: 1.40, text: "He's not very fast though"},
-        {condition: 1.50, text: "Luckily, we can clone him"},
-        {condition: 4.22, text: "You've spent enough to buy 1 gallon of milk ($4.22 average)"},
+        {condition: 0.30, text: "Wow, this is getting kind of tiring, huh?"},
+        {condition: 0.40, text: "Let's find someone to spend this for you"},
+        {condition: 0.50, text: "This is Bob. He can spend money for you automatically."},
+        {condition: 0.60, text: "He's not very fast though"},
+        {condition: 0.70, text: "Luckily, we can clone him"},
+        {condition: 5, text: "You've spent 5 dollars"},
+        {condition: 50, text: "This is Alice. She helps Bob spend more."},
+        {condition: 75, text: "Of course, we can clone her too"},
         {condition: 100, text: "$100, wow!"},
-        {condition: 115, text: "This is Alice. She helps Bob spend more."},
-        {condition: 145, text: "Of course, we can clone her too"},
-        {condition: 235, text: "You've spent the average weekly grocery bill for a family of four ($235)"},
-        {condition: 1e3, text: "Your clicks sure aren't doing much, are they?"},
-        {condition: 1100, text: "Let's boost your click power a bit (also applies to cloning)"},
-        {condition: 1413, text: "You've spent the median rent ($1,413)"},
-        {condition: 11800, text: "You've spent the current cost of a Rolex GMT-Master II ($11,800)"},
-        {condition: 13000, text: "Wouldn't it be better if you didn't have to click at all?"},
-        {condition: 15000, text: "Introducing: autocloning (note: you can only have one effect active at a time)"},
-        {condition: 39075, text: "You've spent the average federal student loan debt ($39,075)"},
-        {condition: 83730, text: "You've spent the median household income ($83,730)"},
+        {condition: 300, text: "Your clicks sure aren't doing much, are they?"},
+        {condition: 400, text: "Let's boost your click power a bit (also applies to cloning)"},
+        {condition: 1000, text: "You've spent a thousand dollars"},
+        {condition: 10000, text: "$10,000 spent now"},
+        {condition: 12000, text: "Wouldn't it be better if you didn't have to click at all?"},
+        {condition: 13000, text: "Introducing: autocloning (note: you can only have one effect active at a time)"},
+        {condition: 1e5, text: "You've spent $100,000"},
         {condition: 1e5, text: "You can hire some interns to run the autocloner"},
-        {condition: 403200, text: "You've spent the median price of a home ($403,200)"},
         {condition: 5e5, text: "Host a job fair to get more interns (increases the longer you leave it activated)"},
-        {condition: 1e6, text: "You've spent a million dollars. A private jet can cost that much - per year!"},
-        {condition: 28e6, text: "You've spent the auction price of Dorothy's Ruby Slippers from The Wizard of Oz ($28 million)"},
-        {condition: 50e6, text: "A strange man named Mr E appears. He doesn't like to be cloned, but accepts human sacrifices..."},
-        {condition: 56e6, text: "You've spent the number of people who die each year (56 million)"},
-        {condition: 168.2e6, text: "You've spent the sale price of The Scream by Edvard Munch ($168.2 million)"},
-        {condition: 8.3e9, text: "You've spent the estimated population of Earth (8.3 billion)"},
-        {condition: 13.8e9, text: "You've spent the age of the Universe (13.8 billion years)"},
-        {condition: 99.8e9, text: "You've spent the federal funding for SNAP in 2024 ($99.8 billion)"},
-        {condition: 220e9, text: "You've spent the total medical debt in the US ($220 billion)"},
-        {condition: 400e9, text: "You've spent the high estimate for stars in the Milky Way (400 billion)"}
+        {condition: 1e6, text: "1 million dollars"},
+        {condition: 50e6, text: "A strange man named Mr E appears. He doesn't like to be cloned, but accepts human sacrifices..."}
     ];
     people = {
-        bob: new Person(0, "Bob", 1, 1.25, 1.50),
-        alice: new Person(0, "Alice", 1, 115, 130),
+        bob: new Person(0, "Bob", 1, 0.50, 0.70),
+        alice: new Person(0, "Alice", 1, 50, 75),
         intern: new Person(0.01, "Interns", 0, 1e5, null),
         misterE: new Person(0, "Mr E", 1, 50e6, null)
     };
@@ -94,7 +81,7 @@ function initializeGame(){
                 activateButtons.clickUpgrade.activated = false;
                 document.getElementById("clickStrengthText").textContent = `Boost Click Strength`;
             },
-            cost: 1100,
+            cost: 400,
             activated: false
         },
         autoclone: {
@@ -103,7 +90,7 @@ function initializeGame(){
                 autocloneObject.aliceAmount = 0;
                 autocloneObject.autocloneActivated = false;
             },
-            cost: 15000
+            cost: 13000
         },
         hiring: {
             removeUpgrade(){
@@ -161,9 +148,20 @@ function resetDisplay(){
 darkModeButton.addEventListener("click", () => {
     if(darkModeButton.textContent === "Dark Mode"){
         darkModeButton.textContent = "Light Mode";
-        
+        root.style.setProperty("--button-background-color", `rgb(48, 37, 37)`);
+        root.style.setProperty("--button-color", `rgb(187, 187, 186)`);
+        root.style.setProperty("--button-background-hover", `rgb(160, 160, 160)`);
+        root.style.setProperty("--button-hover-color", `rgb(42, 81, 1)`);
+        root.style.setProperty("--button-disabled-color", `rgb(41, 70, 9)`);
+        root.style.setProperty("--button-disabled-background", `rgb(162, 163, 151)`);
     } else {
         darkModeButton.textContent = "Dark Mode";
+        root.style.setProperty("--button-background-color", `rgb(226, 230, 193)`);
+        root.style.setProperty("--button-color", `rgb(46, 36, 1)`);
+        root.style.setProperty("--button-background-hover", `rgb(185, 188, 158)`);
+        root.style.setProperty("--button-hover-color", `rgb(56, 105, 3)`);
+        root.style.setProperty("--button-disabled-color", `rgb(176, 245, 102)`);
+        root.style.setProperty("--button-disabled-background", `rgb(103, 105, 88)`);
     }
     document.body.classList.toggle("dark-mode");
     clickDisplay.classList.toggle("border-dark");
@@ -259,6 +257,7 @@ function updateDisplay(){
         let m = document.createElement("div");
         m.textContent = messages[0].text;
         m.classList.add("message");
+        m.classList.add("fade-in");
         messages.shift();
         messageLog.prepend(m);
     }

@@ -2,22 +2,32 @@
     font-size: 40px;
 }
 
+:root {
+    --button-background-color: rgb(226, 230, 193);
+    --button-color: rgb(46, 36, 1);
+    --button-background-hover: rgb(185, 188, 158);
+    --button-hover-color: rgb(56, 105, 3);
+    --button-disabled-color: rgb(176, 245, 102);
+    --button-disabled-background: rgb(103, 105, 88);
+}
+
 button {
-    background-color: rgb(48, 37, 37);
-    color: rgb(187, 187, 186);
+    background-color: var(--button-background-color);
+    color: var(--button-color);
 }
 
 button:hover {
-    background-color: rgba(48, 37, 37, 0.836);
-    color: rgb(187, 187, 186);
+    background-color: var(--button-background-hover);
+    color: var(--button-hover-color);
 }
 
 button:disabled {
-    background-color: rgba(48, 37, 37, 0.836);
+    background-color: var(--button-disabled-background);
+    color: var(--button-disabled-color);
 }
 
 body {
-    background-color: white;
+    background-color: rgb(250, 253, 203);
     color: black;
 }
 
@@ -49,6 +59,7 @@ body {
 
 .message {
     padding-top: 10px;
+    opacity: 0;
 }
 
 .people-container {
@@ -78,12 +89,14 @@ body {
 }
 
 .people {
-    margin-top: 10px;
+    margin-top: 1em;
 }
 
 .activate-button {
     margin-left: 10px;
     cursor: pointer;
+    font-size: 1em;
+    padding: 5px 10px;
 }
 
 .upgrade-text {
@@ -169,8 +182,8 @@ body {
     cursor: pointer;
     padding: 1em;
     min-width: 10em;
-    background-color: rgb(48, 37, 37);
-    color: rgb(187, 187, 186);
+    background-color: var(--button-background-color);
+    color: var(--button-color);
     border: thick double gray;
 }
 
@@ -178,12 +191,14 @@ body {
     padding: 5px 10px;
     margin-top: 5px;
     cursor: pointer;
+    font-size: 1em;
 }
 
 .modal-popup {
     max-width: 500px;
     font-size: 1.5em;
     padding: 2em;
+    background-color:rgb(250, 253, 203);
 }
 
 .dark-modal {
