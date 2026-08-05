@@ -38,11 +38,62 @@ let randomEvents = [
     },
     {
         chance: 0.2,
-        buttonText:,
-        flavorText:,
-        effectText:,
+        buttonText: `Hm. Okay`,
+        flavorText: `Your interns are ruthless. Cutthroat. They don't sleep. Don't eat. All they do is work.
+        Even though they don't get paid, they put every ounce of their beings into the job. Unfortunately, this is
+        terrible for their health.`,
+        effectText: `Intern production doubled, intern amount decreases over time`,
         effect(){
-            
+            people.intern.value *= 2;
+            state.killInterns = true;
+        }
+    },
+    {
+        chance: 0.2,
+        buttonText: `Hooray!`,
+        flavorText: `The stock market crashes. Billionaires everywhere cry out in agony. Their time has come.`,
+        effectText: ``,
+        effect(){
+            let amount = state.spentMoney*100*Math.random();
+            decreaseMoney(amount);
+            this.effectText = `Money decreased by ${numberFormat1.format(amount)}`;
+        }
+    },
+    {
+        chance: 0.2,
+        buttonText: `Noooo`,
+        flavorText: `Business is booming! The money printers are working overtime to keep up. More money!`,
+        effectText: ``,
+        effect(){
+            let amount = state.spentMoney * 0.3 * Math.random();
+            state.money += amount;
+            this.effectText = `Money increased by ${numberFormat1.format(amount)}`;
+        }
+    },
+    {
+        chance: 0.2,
+        buttonText: `Even clicking this button is hard`,
+        flavorText: `We have all come to appreciate the benefits of the autocloner. Our hands, once cramped, can now
+        rest. In fact, they've rested so much that we're not sure how to use them anymore. The autocloner doesn't mind.
+        It just works harder.`,
+        effectText: `Autocloner production doubled, cannot manually clone`,
+        effect(){
+            autocloneObject.multiplier = 2;
+            let cloneButtons = document.querySelectorAll(".clone-button");
+            cloneButtons[0].disabled = true;
+            cloneButtons[1].disabled = true;
+        }
+    },
+    {
+        chance: 0.05,
+        buttonText: `I love clicking buttons!`,
+        flavorText: `You've really got the hang of this clicking business. They watch in awe as you pull off heist
+        after heist. No one does it like the boss.`,
+        effectText: ``,
+        effect(){
+            let percent = (1 + Math.random()*4)/100;
+            state.clickPercent = percent;
+            this.effectText = `Manually spending decreases money by ${(percent*100).toFixed(2)}%`;
         }
     }
 ]
@@ -65,7 +116,9 @@ function initializeGame(){
             hasHiringFair: false,
             hasMisterE: false,
             millionEvent: false
-        }
+        },
+        killInterns: false,
+        clickPercent: 0
     };
 
     messages = [
@@ -143,7 +196,8 @@ function initializeGame(){
         unlockedAutocloning: false,
         autocloneActivated: false,
         bobAmount: 0,
-        aliceAmount: 0
+        aliceAmount: 0,
+        multiplier: 1
     };
 
     moneyButton.addEventListener("click", manualSpend);
@@ -381,9 +435,10 @@ function updateState(dt){
         clickDisplay.append(autoIntern.createButton("hiringFairText"));
     }
 
+    // Million dollar random event
     if(!state.unlocks.millionEvent && round(state.spentMoney) >= 1e2){
         state.paused = true;
-        let event = randomEvents[0];
+        let event = randomEvents[5];
         createRandomEvent(event);
         eventModal.showModal();
         state.unlocks.millionEvent = true;
@@ -437,6 +492,10 @@ function updateState(dt){
         boostClickPower(dt);
     }
 
+    if(state.killInterns){
+        people.intern.amount -= 1/1000 * dt;
+    }
+
     if(totalTime - lastSave >= 5000){
         saveGame();
         lastSave = totalTime;
@@ -472,8 +531,8 @@ class ActivateButton{
 }
 
 function autoclone(ac, dt){
-    people.bob.amount += ac.bobAmount/1000 * dt * (1+people.intern.amount*people.intern.value);
-    people.alice.amount += ac.aliceAmount/1000 * dt * (1+people.intern.amount*people.intern.value);
+    people.bob.amount += ac.multiplier * ac.bobAmount/1000 * dt * (1+people.intern.amount*people.intern.value);
+    people.alice.amount += ac.multiplier * ac.aliceAmount/1000 * dt * (1+people.intern.amount*people.intern.value);
 }
 
 function hireInterns(dt){
@@ -515,8 +574,8 @@ function compoundInterest(p, r, t){
 }
 
 function manualSpend(){
-    state.money -= state.clickStrength;
-    state.spentMoney += state.clickStrength;
+    state.money -= (state.clickStrength + state.money*state.clickPercent);
+    state.spentMoney += (state.clickStrength + state.money*state.clickPercent);
     updateDisplay();
 }
 
@@ -525,6 +584,8 @@ function manualSpend(){
 // Run method attached to object to put effect into place
 // Return modal
 function createRandomEvent(obj){
+    obj.effect();
+
     let mainText = document.createElement("div");
     let effdiv = document.createElement("div");
     let flavdiv = document.createElement("div");
@@ -544,8 +605,6 @@ function createRandomEvent(obj){
     mainText.append(effdiv);
 
     eventModal.append(mainText, exitButton);
-
-    obj.effect();
 }
 
 // Creates game over text and handles end of game states (hard mode or normal)
