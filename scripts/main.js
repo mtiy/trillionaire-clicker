@@ -24,19 +24,19 @@ const eventModal = document.getElementById("eventModal");
 const root = document.querySelector(":root");
 
 // Random Events
-let randomEvents = {
-    cloneUprising: {
+let randomEvents = [
+    {
         chance: 0.2,
         buttonText: `Good for them, I guess`,
         flavorText: `The clones of Bob and Alice have unionized, citing extreme work hours as the
         primary cause. You agree to reduce their working hours, at the cost of some efficiency.`,
         effectText: `Bob and Alice efficiency decreased by 50%`,
         effect(){
-            people.bob.value /= 2;
-            people.alice.value /= 2;
+            people.bob.value * 0.5;
+            people.alice.value * 0.5;
         }
     }
-}
+]
 
 // Initialize all states and conditions for the purpose of starting a new game
 function initializeGame(){
