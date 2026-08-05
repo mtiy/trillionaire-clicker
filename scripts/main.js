@@ -35,7 +35,8 @@ let randomEvents = [
             people.bob.value * 0.5;
             people.alice.value * 0.5;
         }
-    }
+    },
+    {}
 ]
 
 // Initialize all states and conditions for the purpose of starting a new game
