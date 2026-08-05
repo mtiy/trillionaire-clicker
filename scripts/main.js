@@ -20,7 +20,23 @@ const endgameButtons = document.querySelector(".button-container");
 const startModal = document.getElementById("startScreen");
 const hardModeModal = document.getElementById("hardModeStartScreen");
 const restartConfirmModal = document.getElementById("restartConfirm");
+const eventModal = document.getElementById("eventModal");
 const root = document.querySelector(":root");
+
+// Random Events
+let randomEvents = {
+    cloneUprising: {
+        chance: 0.2,
+        buttonText: `Good for them, I guess`,
+        flavorText: `The clones of Bob and Alice have unionized, citing extreme work hours as the
+        primary cause. You agree to reduce their working hours, at the cost of some efficiency.`,
+        effectText: `Bob and Alice efficiency decreased by 50%`,
+        effect(){
+            people.bob.value /= 2;
+            people.alice.value /= 2;
+        }
+    }
+}
 
 // Initialize all states and conditions for the purpose of starting a new game
 function initializeGame(){
@@ -38,7 +54,8 @@ function initializeGame(){
             unlockedClickBoost: false,
             hasInterns: false,
             hasHiringFair: false,
-            hasMisterE: false
+            hasMisterE: false,
+            millionEvent: false
         }
     };
 
@@ -53,25 +70,31 @@ function initializeGame(){
         {condition: 0.60, text: "He's not very fast though"},
         {condition: 0.70, text: "Luckily, we can clone him"},
         {condition: 5, text: "You've spent 5 dollars"},
-        {condition: 50, text: "This is Alice. She helps Bob spend more."},
-        {condition: 75, text: "Of course, we can clone her too"},
+        {condition: 50, text: "Your clicks sure aren't doing much, are they?"},
+        {condition: 75, text: "Let's boost your click power a bit (also applies to cloning)"},
         {condition: 100, text: "$100, wow!"},
-        {condition: 300, text: "Your clicks sure aren't doing much, are they?"},
-        {condition: 400, text: "Let's boost your click power a bit (also applies to cloning)"},
+        {condition: 300, text: "This is Alice. She helps Bob spend more."},
+        {condition: 400, text: "Of course, we can clone her too"},
         {condition: 1000, text: "You've spent a thousand dollars"},
         {condition: 10000, text: "$10,000 spent now"},
         {condition: 12000, text: "Wouldn't it be better if you didn't have to click at all?"},
-        {condition: 13000, text: "Introducing: autocloning (note: you can only have one effect active at a time)"},
+        {condition: 16000, text: "Introducing: autocloning (note: you can only have one effect active at a time)"},
+        {condition: 90000, text: "You can hire some interns to run the autocloner"},
         {condition: 1e5, text: "You've spent $100,000"},
-        {condition: 1e5, text: "You can hire some interns to run the autocloner"},
         {condition: 5e5, text: "Host a job fair to get more interns (increases the longer you leave it activated)"},
         {condition: 1e6, text: "1 million dollars"},
-        {condition: 50e6, text: "A strange man named Mr E appears. He doesn't like to be cloned, but accepts human sacrifices..."}
+        {condition: 10e6, text: "10 million"},
+        {condition: 50e6, text: "A strange man named Mr E appears. He doesn't like to be cloned, but accepts human sacrifices..."},
+        {condition: 100e6, text: "100 million"},
+        {condition: 1e9, text: "A billion dollars spent and gone"},
+        {condition: 10e9, text: "10 billion"},
+        {condition: 100e9, text: "100 billion. Getting closer"},
+        {condition: 1e12, text: "1 trillion dollars. But not enough yet"}
     ];
     people = {
         bob: new Person(0, "Bob", 1, 0.50, 0.70),
-        alice: new Person(0, "Alice", 1, 50, 75),
-        intern: new Person(0.01, "Interns", 0, 1e5, null),
+        alice: new Person(0, "Alice", 1, 300, 400),
+        intern: new Person(0.01, "Interns", 0, 90000, null),
         misterE: new Person(0, "Mr E", 1, 50e6, null)
     };
     activateButtons = {
@@ -81,7 +104,7 @@ function initializeGame(){
                 activateButtons.clickUpgrade.activated = false;
                 document.getElementById("clickStrengthText").textContent = `Boost Click Strength`;
             },
-            cost: 400,
+            cost: 75,
             activated: false
         },
         autoclone: {
@@ -90,7 +113,7 @@ function initializeGame(){
                 autocloneObject.aliceAmount = 0;
                 autocloneObject.autocloneActivated = false;
             },
-            cost: 13000
+            cost: 16000
         },
         hiring: {
             removeUpgrade(){
@@ -348,6 +371,14 @@ function updateState(dt){
         clickDisplay.append(autoIntern.createButton("hiringFairText"));
     }
 
+    if(!state.unlocks.millionEvent && round(state.spentMoney) >= 1e6){
+        state.paused = true;
+        let event = randomEvents[0];
+        createRandomEvent(event);
+        eventModal.showModal();
+        state.unlocks.millionEvent = true;
+    }
+
     if(!state.unlocks.hasMisterE && round(state.spentMoney) >= people.misterE.cost){
         peopleDisplay.append(people.misterE.createElement(`${people.misterE.name}: Multiply spending by e^${people.misterE.value.toFixed(4)}`));
         peopleDisplay.append(people.misterE.createSacrificeButton("Sacrifice"));
@@ -477,6 +508,33 @@ function manualSpend(){
     state.money -= state.clickStrength;
     state.spentMoney += state.clickStrength;
     updateDisplay();
+}
+
+// Take an object and a modal element
+// Set text of modal element and append button(s)
+// Run method attached to object to put effect into place
+// Return modal
+function createRandomEvent(obj){
+    let mainText = document.createElement("div");
+    let effdiv = document.createElement("div");
+    let flavdiv = document.createElement("div");
+    let exitButton = document.createElement("button");
+    effdiv.classList.add("effect-text");
+    effdiv.textContent = obj.effectText;
+    flavdiv.textContent = obj.flavorText;
+    exitButton.textContent = obj.buttonText;
+    exitButton.addEventListener("click", () => {
+        eventModal.close();
+    });
+    exitButton.classList.add("modal-button");
+
+    mainText.append(flavdiv);
+    mainText.append(document.createElement("br"));
+    mainText.append(effdiv);
+
+    eventModal.append(mainText, exitButton);
+
+    obj.effect();
 }
 
 // Creates game over text and handles end of game states (hard mode or normal)
