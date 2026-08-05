@@ -54,7 +54,7 @@ body {
 .message-log {
     font-size: 1.2em;
     width: 400px;
-    height: 200px;
+    height: 250px;
     overflow: hidden;
 }
 
@@ -68,14 +68,16 @@ body {
     padding: 1em 1em;
     font-size: 1.2em;
     margin-left: 50px;
-    width: 300px;
+    min-width: 350px;
+    min-height: 320px;
 }
 
 .click-upgrade-container {
     border: 2px solid black;
     padding: 1em 1em;
     font-size: 1.2em;
-    width: 300px;
+    min-width: 350px;
+    min-height: 320px;
     margin-right: 50px;
 }
 
@@ -91,6 +93,10 @@ body {
 
 .effect-text {
     font-weight: bold;
+}
+
+.headline {
+    font-style: italic;
 }
 
 .people {

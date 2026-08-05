@@ -26,7 +26,8 @@ const root = document.querySelector(":root");
 // Random Events
 let randomEvents = [
     {
-        chance: 0.2,
+        chance: 0.15,
+        name: `Clone Uprising`,
         buttonText: `Good for them, I guess`,
         flavorText: `The clones of Bob and Alice have unionized, citing extreme work hours as the
         primary cause. You agree to reduce their working hours, at the cost of some efficiency.`,
@@ -37,7 +38,8 @@ let randomEvents = [
         }
     },
     {
-        chance: 0.2,
+        chance: 0.15,
+        name: `Ambitious Interns`,
         buttonText: `Hm. Okay`,
         flavorText: `Your interns are ruthless. Cutthroat. They don't sleep. Don't eat. All they do is work.
         Even though they don't get paid, they put every ounce of their beings into the job. Unfortunately, this is
@@ -49,7 +51,8 @@ let randomEvents = [
         }
     },
     {
-        chance: 0.2,
+        chance: 0.4,
+        name: `Economy Collapses!`,
         buttonText: `Hooray!`,
         flavorText: `The stock market crashes. Billionaires everywhere cry out in agony. Their time has come.`,
         effectText: ``,
@@ -60,7 +63,8 @@ let randomEvents = [
         }
     },
     {
-        chance: 0.2,
+        chance: 0.15,
+        name: `Money Everywhere!`,
         buttonText: `Noooo`,
         flavorText: `Business is booming! The money printers are working overtime to keep up. More money!`,
         effectText: ``,
@@ -71,7 +75,8 @@ let randomEvents = [
         }
     },
     {
-        chance: 0.2,
+        chance: 0.1,
+        name: `Age of Automation`,
         buttonText: `Even clicking this button is hard`,
         flavorText: `We have all come to appreciate the benefits of the autocloner. Our hands, once cramped, can now
         rest. In fact, they've rested so much that we're not sure how to use them anymore. The autocloner doesn't mind.
@@ -86,12 +91,12 @@ let randomEvents = [
     },
     {
         chance: 0.05,
+        name: `The Invisible Hand`,
         buttonText: `I love clicking buttons!`,
-        flavorText: `You've really got the hang of this clicking business. They watch in awe as you pull off heist
-        after heist. No one does it like the boss.`,
+        flavorText: `You've really got the hang of this clicking business. Guiding money in the right direction - your pockets. No one does it like the boss.`,
         effectText: ``,
         effect(){
-            let percent = (1 + Math.random()*4)/100;
+            let percent = (0.1 + Math.random()*2)/100;
             state.clickPercent = percent;
             this.effectText = `Manually spending decreases money by ${(percent*100).toFixed(2)}%`;
         }
@@ -118,7 +123,8 @@ function initializeGame(){
             millionEvent: false
         },
         killInterns: false,
-        clickPercent: 0
+        clickPercent: 0,
+        randomConstant: 0
     };
 
     messages = [
@@ -349,7 +355,7 @@ function updateDisplay(){
         messageLog.prepend(m);
     }
     document.querySelectorAll(".message").forEach((element) => {
-        if(element.offsetTop > 450){
+        if(element.offsetTop > 550){
             element.remove();
         }
     });
@@ -437,8 +443,24 @@ function updateState(dt){
 
     // Million dollar random event
     if(!state.unlocks.millionEvent && round(state.spentMoney) >= 1e2){
-        state.paused = true;
-        let event = randomEvents[5];
+
+        let randNum = Math.random() - state.randomConstant;
+        console.log(randNum);
+        let event = undefined;
+
+        // Choosing an event based on their weighted probabilities, assumes they add up to 1
+        for(i of randomEvents){
+            if(randNum < i.chance){
+                event = i;
+                state.randomConstant = i.chance;
+                i.chance = 0;
+                console.log(i);
+                break;
+            } else {
+                randNum -= i.chance;
+            }
+        }
+
         createRandomEvent(event);
         eventModal.showModal();
         state.unlocks.millionEvent = true;
@@ -492,8 +514,11 @@ function updateState(dt){
         boostClickPower(dt);
     }
 
-    if(state.killInterns){
+    if(state.killInterns && people.intern.amount > 0){
         people.intern.amount -= 1/1000 * dt;
+        if(people.intern.amount < 0){
+            people.intern.amount = 0;
+        }
     }
 
     if(totalTime - lastSave >= 5000){
@@ -579,17 +604,40 @@ function manualSpend(){
     updateDisplay();
 }
 
-// Take an object and a modal element
-// Set text of modal element and append button(s)
-// Run method attached to object to put effect into place
-// Return modal
+//
+function chooseRandomEvent(arr){
+    let randNum = Math.random() - state.randomConstant;
+    console.log(randNum);
+    let event = undefined;
+
+    // Choosing an event based on their weighted probabilities
+    for(i of arr){
+        if(randNum < i.chance){
+            event = i;
+            state.randomConstant = i.chance;
+            i.chance = 0;
+            console.log(i);
+            break;
+        } else {
+            randNum -= i.chance;
+        }
+    }
+
+    createRandomEvent(event);
+    eventModal.showModal();
+}
+
+// Fill the event modal based on which random event was chosen
 function createRandomEvent(obj){
     obj.effect();
 
+    let titleText = document.createElement("div");
     let mainText = document.createElement("div");
     let effdiv = document.createElement("div");
     let flavdiv = document.createElement("div");
     let exitButton = document.createElement("button");
+    titleText.classList.add("headline");
+    titleText.textContent = obj.name;
     effdiv.classList.add("effect-text");
     effdiv.textContent = obj.effectText;
     flavdiv.textContent = obj.flavorText;
@@ -600,6 +648,8 @@ function createRandomEvent(obj){
     });
     exitButton.classList.add("modal-button");
 
+    mainText.append(titleText);
+    mainText.append(document.createElement("br"));
     mainText.append(flavdiv);
     mainText.append(document.createElement("br"));
     mainText.append(effdiv);
