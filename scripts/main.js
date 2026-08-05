@@ -32,11 +32,19 @@ let randomEvents = [
         primary cause. You agree to reduce their working hours, at the cost of some efficiency.`,
         effectText: `Bob and Alice efficiency decreased by 50%`,
         effect(){
-            people.bob.value * 0.5;
-            people.alice.value * 0.5;
+            people.bob.value *= 0.5;
+            people.alice.value *= 0.5;
         }
     },
-    {}
+    {
+        chance: 0.2,
+        buttonText:,
+        flavorText:,
+        effectText:,
+        effect(){
+            
+        }
+    }
 ]
 
 // Initialize all states and conditions for the purpose of starting a new game
@@ -161,6 +169,7 @@ function resetDisplay(){
     gameOverDisplay.hidden = true;
     gameOverDisplay.classList.remove("fade-in");
     moneyDisplay.classList.remove("shrink-out");
+    eventModal.textContent = ``;
 
     moneyButton.hidden = false;
     peopleDisplay.hidden = false;
@@ -372,7 +381,7 @@ function updateState(dt){
         clickDisplay.append(autoIntern.createButton("hiringFairText"));
     }
 
-    if(!state.unlocks.millionEvent && round(state.spentMoney) >= 1e6){
+    if(!state.unlocks.millionEvent && round(state.spentMoney) >= 1e2){
         state.paused = true;
         let event = randomEvents[0];
         createRandomEvent(event);
@@ -526,6 +535,7 @@ function createRandomEvent(obj){
     exitButton.textContent = obj.buttonText;
     exitButton.addEventListener("click", () => {
         eventModal.close();
+        state.paused = false;
     });
     exitButton.classList.add("modal-button");
 
