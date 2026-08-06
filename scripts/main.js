@@ -120,7 +120,8 @@ function initializeGame(){
             hasInterns: false,
             hasHiringFair: false,
             hasMisterE: false,
-            millionEvent: false
+            millionEvent: false,
+            billionEvent: false
         },
         killInterns: false,
         clickPercent: 0,
@@ -443,33 +444,25 @@ function updateState(dt){
 
     // Million dollar random event
     if(!state.unlocks.millionEvent && round(state.spentMoney) >= 1e2){
-
-        let randNum = Math.random() - state.randomConstant;
-        console.log(randNum);
-        let event = undefined;
-
-        // Choosing an event based on their weighted probabilities, assumes they add up to 1
-        for(i of randomEvents){
-            if(randNum < i.chance){
-                event = i;
-                state.randomConstant = i.chance;
-                i.chance = 0;
-                console.log(i);
-                break;
-            } else {
-                randNum -= i.chance;
-            }
-        }
-
+        let event = chooseRandomEvent();
         createRandomEvent(event);
         eventModal.showModal();
         state.unlocks.millionEvent = true;
     }
 
+    // Unlocking Mr E
     if(!state.unlocks.hasMisterE && round(state.spentMoney) >= people.misterE.cost){
         peopleDisplay.append(people.misterE.createElement(`${people.misterE.name}: Multiply spending by e^${people.misterE.value.toFixed(4)}`));
         peopleDisplay.append(people.misterE.createSacrificeButton("Sacrifice"));
         state.unlocks.hasMisterE = true;
+    }
+
+    // Billion dollar random event
+    if(!state.unlocks.billionEvent && round(state.spentMoney) >= 1e3){
+        let event = chooseRandomEvent();
+        createRandomEvent(event);
+        eventModal.showModal();
+        state.unlocks.billionEvent = true;
     }
 
     let decreaseAmount = people.bob.amount * people.bob.value * (1 + people.alice.amount * people.alice.value) * Math.E**(people.misterE.value);
@@ -605,31 +598,31 @@ function manualSpend(){
 }
 
 //
-function chooseRandomEvent(arr){
-    let randNum = Math.random() - state.randomConstant;
+function chooseRandomEvent(){
+    let randNum = Math.random() * (1-state.randomConstant);
     console.log(randNum);
     let event = undefined;
 
     // Choosing an event based on their weighted probabilities
-    for(i of arr){
+    for(i of randomEvents){
         if(randNum < i.chance){
             event = i;
             state.randomConstant = i.chance;
             i.chance = 0;
-            console.log(i);
             break;
         } else {
             randNum -= i.chance;
         }
     }
 
-    createRandomEvent(event);
-    eventModal.showModal();
+    return event;
 }
 
 // Fill the event modal based on which random event was chosen
 function createRandomEvent(obj){
     obj.effect();
+
+    eventModal.textContent = ``;
 
     let titleText = document.createElement("div");
     let mainText = document.createElement("div");
@@ -644,7 +637,6 @@ function createRandomEvent(obj){
     exitButton.textContent = obj.buttonText;
     exitButton.addEventListener("click", () => {
         eventModal.close();
-        state.paused = false;
     });
     exitButton.classList.add("modal-button");
 
