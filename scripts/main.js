@@ -103,12 +103,24 @@ let randomEvents = [
     }
 ]
 
+let permanentState = {
+    baseClickStrength: 0.01,
+    bobValue: 0.01,
+    aliceValue: 0.01,
+    autocloneMultiplier: 1,
+    clickBoostMax: 1,
+    hiringFairMax: 10,
+    internValue: 0.01,
+    money: 1e12,
+    totalMoneySpent: 0
+}
+
 // Initialize all states and conditions for the purpose of starting a new game
 function initializeGame(){
     state = {
-        money: 1e12,
+        money: permanentState.money,
         spentMoney: 0,
-        clickStrength: 0.01,
+        clickStrength: permanentState.baseClickStrength,
         paused: false,
         hardMode: false,
         unlocks: {
@@ -163,13 +175,13 @@ function initializeGame(){
     people = {
         bob: new Person(0, "Bob", 1, 0.50, 0.70),
         alice: new Person(0, "Alice", 1, 300, 400),
-        intern: new Person(0.01, "Interns", 0, 90000, null),
+        intern: new Person(permanentState.internValue, "Interns", 0, 90000, null),
         misterE: new Person(0, "Mr E", 1, 50e6, null)
     };
     activateButtons = {
         clickUpgrade: {
             removeUpgrade(){
-                state.clickStrength = 0.01;
+                state.clickStrength = permanentState.baseClickStrength;
                 activateButtons.clickUpgrade.activated = false;
                 document.getElementById("clickStrengthText").textContent = `Boost Click Strength`;
             },
@@ -231,6 +243,7 @@ function resetDisplay(){
     gameOverDisplay.classList.remove("fade-in");
     moneyDisplay.classList.remove("shrink-out");
     eventModal.textContent = ``;
+    document.querySelector(".game-over-text").textContent = ``;
 
     moneyButton.hidden = false;
     peopleDisplay.hidden = false;
@@ -443,7 +456,7 @@ function updateState(dt){
     }
 
     // Million dollar random event
-    if(!state.unlocks.millionEvent && round(state.spentMoney) >= 1e2){
+    if(!state.unlocks.millionEvent && round(state.spentMoney) >= 1e6){
         let event = chooseRandomEvent();
         createRandomEvent(event);
         eventModal.showModal();
@@ -458,7 +471,7 @@ function updateState(dt){
     }
 
     // Billion dollar random event
-    if(!state.unlocks.billionEvent && round(state.spentMoney) >= 1e3){
+    if(!state.unlocks.billionEvent && round(state.spentMoney) >= 1e9){
         let event = chooseRandomEvent();
         createRandomEvent(event);
         eventModal.showModal();
@@ -651,49 +664,50 @@ function createRandomEvent(obj){
 
 // Creates game over text and handles end of game states (hard mode or normal)
 function endGame(){
-    if(state.hardMode){
-        document.querySelector(".game-over-text").textContent = `Woah. Not only did you beat Trillionaire Clicker. You beat it on hard mode. I am 
-        very impressed. You've earned the title of Ultimate Trillionaire Clicker Master. Wear it with pride.`;
-    } else {
-        document.querySelector(".game-over-text").textContent = `Congratulations! You did it! 
-        You can play again, with a couple different options. Or you can just go tell all your friends about 
-        how you won Trillionaire Clicker. Good work!`;
-    }
+    // Apply upgrade (for now just click strength boost)
+    permanentState.baseClickStrength += 0.1;
+    permanentState.totalMoneySpent += state.spentMoney;
 
+    // Endgame Text
+    let gameOverText = document.createTextNode(`You find yourself here again. Or is this the first time? Mr. E stares at you, then at the pile of
+    money you've spent. "More", he says, "I need more."`);
+    let spendText = document.createTextNode(`You have spent a total of ${numberFormat1.format(permanentState.totalMoneySpent)}`);
+    let upgradeText = document.createElement("div");
+    upgradeText.textContent = `Click strength permanently increased to ${permanentState.baseClickStrength.toFixed(2)}`;
+    upgradeText.classList.add("permanent-upgrade-text");
+
+    document.querySelector(".game-over-text").append(gameOverText, document.createElement("br"), spendText, document.createElement("br"), upgradeText);
+
+    // Create play again buttons
+    let playAgain = document.createElement("button");
+    let playAgainHard = document.createElement("button");
+
+    playAgain.classList.add("end-game-button");
+    playAgain.textContent = `Play Again`;
+    playAgain.addEventListener("click", () => {
+        initializeGame();
+        resetDisplay();
+    });
+
+    playAgainHard.classList.add("end-game-button");
+    playAgainHard.textContent = `Play Again (Hard Mode)`;
+    playAgainHard.addEventListener("click", () => {
+        initializeGame();
+        resetDisplay();
+        state.paused = true;
+        lastTime = null;
+        state.hardMode = true;
+        hardModeModal.showModal();
+    });
+
+    endgameButtons.append(playAgain, playAgainHard);
+       
+    // Show game over text
     gameOverDisplay.hidden = false;
     gameOverDisplay.classList.add("fade-in");
-    let options = ["playAgain", "playEasy", "playHard"];
-    // Assign replay button functions
-    for(i of options){
-        let b = document.createElement("button");
-        b.classList.add("end-game-button");
-        if(i === "playAgain"){
-            b.textContent = `Play Again`;
-            b.addEventListener("click", () => {
-                initializeGame();
-                resetDisplay();
-            });
-        } else if(i === "playEasy"){
-            b.textContent = `Play Again with Everything Unlocked`;
-            b.addEventListener("click", () => {
-                initializeGame();
-                resetDisplay();
-                devMode();
-            });
-        } else {
-            b.textContent = `Play Again on Hard Mode`;
-            b.addEventListener("click", () => {
-                initializeGame();
-                resetDisplay();
-                state.paused = true;
-                lastTime = null;
-                state.hardMode = true;
-                hardModeModal.showModal();
-            });
-        }
-        endgameButtons.append(b);
-    }
 }
+
+// Determine and apply prestige bonuses
 
 // Game Loop
 let lastTime = null;
@@ -737,7 +751,8 @@ function saveGame(){
         state: state,
         messages: messages,
         people: people,
-        activateButtons: activateButtons
+        activateButtons: activateButtons,
+        permanentState: permanentState
     }
 
     localStorage.setItem("trillionaireClickerSave", JSON.stringify(save));
@@ -750,6 +765,7 @@ function loadGame(){
 
     state = save.state;
     messages = save.messages;
+    permanentState = save.permanentState;
 
     people = {
         bob: new Person(save.people.bob.value, save.people.bob.name, save.people.bob.amount, save.people.bob.cost, save.people.bob.cloneCost),
