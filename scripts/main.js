@@ -4,6 +4,7 @@ let people;
 let activateButtons;
 let hiringFair;
 let autocloneObject;
+let randomEvents;
 
 // Used for formatting our money
 const numberFormat1 = new Intl.NumberFormat("en-US", {style: "currency", currency: "USD"});
@@ -23,86 +24,6 @@ const restartConfirmModal = document.getElementById("restartConfirm");
 const eventModal = document.getElementById("eventModal");
 const root = document.querySelector(":root");
 
-// Random Events
-let randomEvents = [
-    {
-        chance: 0.15,
-        name: `Clone Uprising`,
-        buttonText: `Good for them, I guess`,
-        flavorText: `The clones of Bob and Alice have unionized, citing extreme work hours as the
-        primary cause. You agree to reduce their working hours, at the cost of some efficiency.`,
-        effectText: `Bob and Alice efficiency decreased by 50%`,
-        effect(){
-            people.bob.value *= 0.5;
-            people.alice.value *= 0.5;
-        }
-    },
-    {
-        chance: 0.15,
-        name: `Ambitious Interns`,
-        buttonText: `Hm. Okay`,
-        flavorText: `Your interns are ruthless. Cutthroat. They don't sleep. Don't eat. All they do is work.
-        Even though they don't get paid, they put every ounce of their beings into the job. Unfortunately, this is
-        terrible for their health.`,
-        effectText: `Intern production doubled, intern amount decreases over time`,
-        effect(){
-            people.intern.value *= 2;
-            state.killInterns = true;
-        }
-    },
-    {
-        chance: 0.4,
-        name: `Economy Collapses!`,
-        buttonText: `Hooray!`,
-        flavorText: `The stock market crashes. Billionaires everywhere cry out in agony. Their time has come.`,
-        effectText: ``,
-        effect(){
-            let amount = state.spentMoney*100*Math.random();
-            decreaseMoney(amount);
-            this.effectText = `Money decreased by ${numberFormat1.format(amount)}`;
-        }
-    },
-    {
-        chance: 0.15,
-        name: `Money Everywhere!`,
-        buttonText: `Noooo`,
-        flavorText: `Business is booming! The money printers are working overtime to keep up. More money!`,
-        effectText: ``,
-        effect(){
-            let amount = state.spentMoney * 0.3 * Math.random();
-            state.money += amount;
-            this.effectText = `Money increased by ${numberFormat1.format(amount)}`;
-        }
-    },
-    {
-        chance: 0.1,
-        name: `Age of Automation`,
-        buttonText: `Even clicking this button is hard`,
-        flavorText: `We have all come to appreciate the benefits of the autocloner. Our hands, once cramped, can now
-        rest. In fact, they've rested so much that we're not sure how to use them anymore. The autocloner doesn't mind.
-        It just works harder.`,
-        effectText: `Autocloner production doubled, cannot manually clone`,
-        effect(){
-            autocloneObject.multiplier = 2;
-            let cloneButtons = document.querySelectorAll(".clone-button");
-            cloneButtons[0].disabled = true;
-            cloneButtons[1].disabled = true;
-        }
-    },
-    {
-        chance: 0.05,
-        name: `The Invisible Hand`,
-        buttonText: `I love clicking buttons!`,
-        flavorText: `You've really got the hang of this clicking business. Guiding money in the right direction - your pockets. No one does it like the boss.`,
-        effectText: ``,
-        effect(){
-            let percent = (0.1 + Math.random()*2)/100;
-            state.clickPercent = percent;
-            this.effectText = `Manually spending decreases money by ${(percent*100).toFixed(2)}%`;
-        }
-    }
-]
-
 let permanentState = {
     baseClickStrength: 0.01,
     bobValue: 0.01,
@@ -113,6 +34,42 @@ let permanentState = {
     internValue: 0.01,
     money: 1e12,
     totalMoneySpent: 0
+}
+
+let prestigeRewards = {
+    index: 0,
+    clickStrengthUpgrade: 0.5,
+    bobMult: 2,
+    aliceMult: 2,
+    clickBoostMaxIncrease: 1,
+    hiringFairMax: 5,
+    upgrade(){
+        let upgradeText = ``;
+        if(this.index === 0){
+            permanentState.baseClickStrength += this.clickStrengthUpgrade;
+            upgradeText = `Click Strength permanently increased to ${permanentState.baseClickStrength.toFixed(2)}`;
+        }
+        if(this.index === 1){
+            permanentState.bobValue *= this.bobMult;
+            upgradeText = `Bob spending per clone permanently increased to ${numberFormat1.format(permanentState.bobValue)}`;
+        }
+        if(this.index === 2){
+            permanentState.aliceValue *= this.aliceMult;
+            upgradeText = `Alice multiplier per clone permanently increased to ${permanentState.aliceValue.toFixed(2)}`;
+        }
+        if(this.index === 3){
+            permanentState.clickBoostMax += this.clickBoostMaxIncrease;
+            upgradeText = `Click Boost maximum permanently increased to ${permanentState.clickBoostMax}`;
+        }
+
+        this.index++;
+        if(this.index === 4){
+            this.index = 0;
+        }
+
+        return upgradeText;
+    }
+    
 }
 
 // Initialize all states and conditions for the purpose of starting a new game
@@ -172,12 +129,14 @@ function initializeGame(){
         {condition: 100e9, text: "100 billion. Getting closer"},
         {condition: 1e12, text: "1 trillion dollars. But not enough yet"}
     ];
+
     people = {
         bob: new Person(0, "Bob", 1, 0.50, 0.70),
         alice: new Person(0, "Alice", 1, 300, 400),
         intern: new Person(permanentState.internValue, "Interns", 0, 90000, null),
         misterE: new Person(0, "Mr E", 1, 50e6, null)
     };
+
     activateButtons = {
         clickUpgrade: {
             removeUpgrade(){
@@ -206,11 +165,13 @@ function initializeGame(){
             cost: 5e5
         }
     };
+
     hiringFair = {
         activated: false,
         timer: 0,
         amount: 1
     };
+
     autocloneObject = {
         unlockedAutocloning: false,
         autocloneActivated: false,
@@ -218,6 +179,85 @@ function initializeGame(){
         aliceAmount: 0,
         multiplier: 1
     };
+
+    randomEvents = [
+        {
+            chance: 0.15,
+            name: `Clone Uprising`,
+            buttonText: `Good for them, I guess`,
+            flavorText: `The clones of Bob and Alice have unionized, citing extreme work hours as the
+            primary cause. You agree to reduce their working hours, at the cost of some efficiency.`,
+            effectText: `Bob and Alice efficiency decreased by 50%`,
+            effect(){
+                people.bob.value *= 0.5;
+                people.alice.value *= 0.5;
+            }
+        },
+        {
+            chance: 0.15,
+            name: `Ambitious Interns`,
+            buttonText: `Hm. Okay`,
+            flavorText: `Your interns are ruthless. Cutthroat. They don't sleep. Don't eat. All they do is work.
+            Even though they don't get paid, they put every ounce of their beings into the job. Unfortunately, this is
+            terrible for their health.`,
+            effectText: `Intern production doubled, intern amount decreases over time`,
+            effect(){
+                people.intern.value *= 2;
+                state.killInterns = true;
+            }
+        },
+        {
+            chance: 0.4,
+            name: `Economy Collapses!`,
+            buttonText: `Hooray!`,
+            flavorText: `The stock market crashes. Billionaires everywhere cry out in agony. Their time has come.`,
+            effectText: ``,
+            effect(){
+                let amount = state.spentMoney*100*Math.random();
+                decreaseMoney(amount);
+                this.effectText = `Money decreased by ${numberFormat1.format(amount)}`;
+            }
+        },
+        {
+            chance: 0.15,
+            name: `Money Everywhere!`,
+            buttonText: `Noooo`,
+            flavorText: `Business is booming! The money printers are working overtime to keep up. More money!`,
+            effectText: ``,
+            effect(){
+                let amount = state.spentMoney * 0.3 * Math.random();
+                state.money += amount;
+                this.effectText = `Money increased by ${numberFormat1.format(amount)}`;
+            }
+        },
+        {
+            chance: 0.1,
+            name: `Age of Automation`,
+            buttonText: `Even clicking this button is hard`,
+            flavorText: `We have all come to appreciate the benefits of the autocloner. Our hands, once cramped, can now
+            rest. In fact, they've rested so much that we're not sure how to use them anymore. The autocloner doesn't mind.
+            It just works harder.`,
+            effectText: `Autocloner production doubled, cannot manually clone`,
+            effect(){
+                autocloneObject.multiplier = 2;
+                let cloneButtons = document.querySelectorAll(".clone-button");
+                cloneButtons[0].disabled = true;
+                cloneButtons[1].disabled = true;
+            }
+        },
+        {
+            chance: 0.05,
+            name: `The Invisible Hand`,
+            buttonText: `I love clicking buttons!`,
+            flavorText: `You've really got the hang of this clicking business. Guiding money in the right direction - your pockets. No one does it like the boss.`,
+            effectText: ``,
+            effect(){
+                let percent = (0.1 + Math.random()*2)/100;
+                state.clickPercent = percent;
+                this.effectText = `Manually spending decreases money by ${(percent*100).toFixed(2)}%`;
+            }
+        }
+    ]
 
     moneyButton.addEventListener("click", manualSpend);
 
@@ -298,6 +338,17 @@ document.getElementById("hardModeButton").addEventListener("click", () => {
 
 document.getElementById("restartYes").addEventListener("click", () => {
     restartConfirmModal.close();
+    permanentState = {
+        baseClickStrength: 0.01,
+        bobValue: 0.01,
+        aliceValue: 0.01,
+        autocloneMultiplier: 1,
+        clickBoostMax: 1,
+        hiringFairMax: 10,
+        internValue: 0.01,
+        money: 1e12,
+        totalMoneySpent: 0
+    }
     initializeGame();
     resetDisplay();
     saveGame();
@@ -389,7 +440,7 @@ function updateDisplay(){
 
 function updateState(dt){
     if(!state.unlocks.hasBob && round(state.spentMoney) >= people.bob.cost){
-        people.bob.value = 0.01;
+        people.bob.value = permanentState.bobValue;
         peopleDisplay.append(people.bob.createElement(`${people.bob.name}: Spending ${numberFormat1.format(people.bob.value*people.bob.amount)} per second`));
         state.unlocks.hasBob = true;
     }
@@ -400,7 +451,7 @@ function updateState(dt){
     }
 
     if(!state.unlocks.hasAlice && round(state.spentMoney) >= people.alice.cost){
-        people.alice.value = 0.01;
+        people.alice.value = permanentState.aliceValue;
         peopleDisplay.append(people.alice.createElement(`${people.alice.name}: Multiply spending by ${1 + people.alice.value*people.alice.amount}`));
         state.unlocks.hasAlice = true;
     }
@@ -579,9 +630,11 @@ function hireInterns(dt){
 }
 
 function boostClickPower(dt){
-    if(state.clickStrength <= 1){
-        state.clickStrength += (1/600)/1000 * dt;
-        document.getElementById("clickStrengthText").textContent = `Click Strength: ${state.clickStrength.toFixed(2)} / 1`;
+    let difference = permanentState.clickBoostMax - state.clickStrength;
+    if(state.clickStrength <= permanentState.clickBoostMax){
+        // Evenly divide the amount we want to increase over 10 minutes
+        state.clickStrength += (difference/600000) * dt;
+        document.getElementById("clickStrengthText").textContent = `Click Strength: ${state.clickStrength.toFixed(2)} / ${permanentState.clickBoostMax}`;
     }
 }
 
@@ -665,7 +718,7 @@ function createRandomEvent(obj){
 // Creates game over text and handles end of game states (hard mode or normal)
 function endGame(){
     // Apply upgrade (for now just click strength boost)
-    permanentState.baseClickStrength += 0.1;
+    let text = prestigeRewards.upgrade();
     permanentState.totalMoneySpent += state.spentMoney;
 
     // Endgame Text
@@ -673,7 +726,7 @@ function endGame(){
     money you've spent. "More", he says, "I need more."`);
     let spendText = document.createTextNode(`You have spent a total of ${numberFormat1.format(permanentState.totalMoneySpent)}`);
     let upgradeText = document.createElement("div");
-    upgradeText.textContent = `Click strength permanently increased to ${permanentState.baseClickStrength.toFixed(2)}`;
+    upgradeText.textContent = text;
     upgradeText.classList.add("permanent-upgrade-text");
 
     document.querySelector(".game-over-text").append(gameOverText, document.createElement("br"), spendText, document.createElement("br"), upgradeText);
@@ -706,8 +759,6 @@ function endGame(){
     gameOverDisplay.hidden = false;
     gameOverDisplay.classList.add("fade-in");
 }
-
-// Determine and apply prestige bonuses
 
 // Game Loop
 let lastTime = null;
