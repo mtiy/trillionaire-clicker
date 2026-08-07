@@ -61,6 +61,9 @@ let prestigeRewards = {
             permanentState.clickBoostMax += this.clickBoostMaxIncrease;
             upgradeText = `Click Boost maximum permanently increased to ${permanentState.clickBoostMax}`;
         }
+        if(this.index === 4){
+            
+        }
 
         this.index++;
         if(this.index === 4){
