@@ -4,7 +4,8 @@ let people;
 let activateButtons;
 let hiringFair;
 let autocloneObject;
-let randomEvents;
+let firstRandomEvents;
+let secondRandomEvents;
 
 // Used for formatting our money
 const numberFormat1 = new Intl.NumberFormat("en-US", {style: "currency", currency: "USD"});
@@ -107,8 +108,7 @@ function initializeGame(){
             billionEvent: false
         },
         killInterns: false,
-        clickPercent: 0,
-        randomConstant: 0
+        clickPercent: 0
     };
 
     messages = [
@@ -130,13 +130,13 @@ function initializeGame(){
         {condition: 1000, text: "You've spent a thousand dollars"},
         {condition: 10000, text: "$10,000 spent now"},
         {condition: 12000, text: "Wouldn't it be better if you didn't have to click at all?"},
-        {condition: 16000, text: "Introducing: autocloning (note: you can only have one effect active at a time)"},
-        {condition: 90000, text: "You can hire some interns to run the autocloner"},
+        {condition: 20000, text: "Introducing: autocloning (note: you can only have one effect active at a time)"},
         {condition: 1e5, text: "You've spent $100,000"},
-        {condition: 5e5, text: "Host a job fair to get more interns (increases the longer you leave it activated)"},
+        {condition: 1.5e5, text: "You can hire some interns to run the autocloner"},
         {condition: 1e6, text: "1 million dollars"},
+        {condition: 1.5e6, text: "Host a job fair to get more interns (increases the longer you leave it activated)"},
         {condition: 10e6, text: "10 million"},
-        {condition: 50e6, text: "A strange man named Mr E appears. He doesn't like to be cloned, but accepts human sacrifices..."},
+        {condition: 50e6, text: "There's a new preacher in town, and his name is Mr. E. He spreads the word of death, and each sacrifice seems to make him stronger..."},
         {condition: 100e6, text: "100 million"},
         {condition: 1e9, text: "A billion dollars spent and gone"},
         {condition: 10e9, text: "10 billion"},
@@ -147,8 +147,8 @@ function initializeGame(){
     people = {
         bob: new Person(0, "Bob", 1, 0.50, 0.70),
         alice: new Person(0, "Alice", 1, 300, 400),
-        intern: new Person(permanentState.internValue, "Interns", 0, 90000, null),
-        misterE: new Person(0, "Mr E", 1, 50e6, null)
+        intern: new Person(permanentState.internValue, "Interns", 0, 2e5, null),
+        misterE: new Person(0, "Mr E", 1e-4, 50e6, null)
     };
 
     activateButtons = {
@@ -176,7 +176,7 @@ function initializeGame(){
                 hiringFair.activated = false;
                 document.getElementById("hiringFairText").textContent = `Job Fair`;
             },
-            cost: 5e5
+            cost: 1.5e6
         }
     };
 
@@ -194,7 +194,7 @@ function initializeGame(){
         multiplier: 1
     };
 
-    randomEvents = [
+    firstRandomEvents = [
         {
             chance: 0.15,
             name: `Clone Uprising`,
@@ -208,7 +208,7 @@ function initializeGame(){
             }
         },
         {
-            chance: 0.15,
+            chance: 0.2,
             name: `Ambitious Interns`,
             buttonText: `Hm. Okay`,
             flavorText: `Your interns are ruthless. Cutthroat. They don't sleep. Don't eat. All they do is work.
@@ -221,7 +221,7 @@ function initializeGame(){
             }
         },
         {
-            chance: 0.4,
+            chance: 0.2,
             name: `Economy Collapses!`,
             buttonText: `Hooray!`,
             flavorText: `The stock market crashes. Billionaires everywhere cry out in agony. Their time has come.`,
@@ -233,7 +233,7 @@ function initializeGame(){
             }
         },
         {
-            chance: 0.15,
+            chance: 0.2,
             name: `Money Everywhere!`,
             buttonText: `Noooo`,
             flavorText: `Business is booming! The money printers are working overtime to keep up. More money!`,
@@ -245,7 +245,7 @@ function initializeGame(){
             }
         },
         {
-            chance: 0.1,
+            chance: 0.2,
             name: `Age of Automation`,
             buttonText: `Even clicking this button is hard`,
             flavorText: `We have all come to appreciate the benefits of the autocloner. Our hands, once cramped, can now
@@ -271,7 +271,57 @@ function initializeGame(){
                 this.effectText = `Manually spending decreases money by ${(percent*100).toFixed(2)}%`;
             }
         }
-    ]
+    ];
+
+    secondRandomEvents = [
+        {
+            chance: 0.3,
+            name: `New Religion`,
+            buttonText: `I love Mr E!`,
+            flavorText: `The people love Mr E. Or, wait, why do we love Mr E? We love Mr E! We can't wait to be sacrificed!`,
+            effectText: `Future sacrifices to Mr E are twice as effective`,
+            effect(){
+                people.misterE.amount *= 2;
+            }
+        },
+        {
+            chance: 0.3,
+            name: `Getting Closer`,
+            buttonText: `I won't`,
+            flavorText: `You can see it now. Getting closer. Money ticking down. Don't give up.`,
+            effectText: `All production doubled`,
+            effect(){
+                people.bob.value *= 2;
+                people.alice.value *= 2;
+                people.intern.value *= 2;
+                autocloneObject.multiplier *= 2;
+            }
+        },
+        {
+            chance: 0.3,
+            name: `Another Preacher`,
+            buttonText: `Placeholder`,
+            flavorText: `A young man has begun preaching on the street corner. He says we should focus on life, rather than death. Every person who follows his word 
+            takes away some of Mr E's power`,
+            effectText: `Placeholder`,
+            effect(){
+                
+            }
+        },
+        {
+            chance: 0.1,
+            name: `Getting Closer`,
+            buttonText: `I won't`,
+            flavorText: `You can see it now. Getting closer. Money ticking down. Don't give up.`,
+            effectText: `All production doubled`,
+            effect(){
+                people.bob.value *= 2;
+                people.alice.value *= 2;
+                people.intern.value *= 2;
+                autocloneObject.multiplier *= 2;
+            }
+        }
+    ];
 
     moneyButton.addEventListener("click", manualSpend);
 
@@ -405,13 +455,12 @@ class Person{
         sb.textContent = buttonText;
         sb.classList.add("clone-button");
         sb.addEventListener("click", () => {
-            let arr = [people.bob.amount-1, people.alice.amount-1, people.intern.amount];
-            let expIncrease = arr.reduce((a,b) => a+b, 0) * 1e-4;
+            let arr = [people.bob.amount-1, people.alice.amount-1];
+            let expIncrease = ((people.bob.amount-1) + (people.alice.amount-1)) * people.misterE.amount; // amount for Mister E is the increase per person
 
             people.misterE.value += expIncrease;
             people.bob.amount = 1;
             people.alice.amount = 1;
-            people.intern.amount = 0;
             document.getElementById(people.misterE.name).textContent = `${people.misterE.name}: Multiply spending by e^${people.misterE.value.toFixed(4)}`;
         });
         return sb;
@@ -522,7 +571,7 @@ function updateState(dt){
 
     // Million dollar random event
     if(!state.unlocks.millionEvent && round(state.spentMoney) >= 1e6){
-        let event = chooseRandomEvent();
+        let event = chooseRandomEvent(firstRandomEvents);
         createRandomEvent(event);
         eventModal.showModal();
         state.unlocks.millionEvent = true;
@@ -537,7 +586,7 @@ function updateState(dt){
 
     // Billion dollar random event
     if(!state.unlocks.billionEvent && round(state.spentMoney) >= 1e9){
-        let event = chooseRandomEvent();
+        let event = chooseRandomEvent(secondRandomEvents);
         createRandomEvent(event);
         eventModal.showModal();
         state.unlocks.billionEvent = true;
@@ -681,17 +730,15 @@ function manualSpend(){
 }
 
 //
-function chooseRandomEvent(){
-    let randNum = Math.random() * (1-state.randomConstant);
+function chooseRandomEvent(eventArray){
+    let randNum = Math.random();
     console.log(randNum);
     let event = undefined;
 
     // Choosing an event based on their weighted probabilities
-    for(i of randomEvents){
+    for(i of eventArray){
         if(randNum < i.chance){
             event = i;
-            state.randomConstant = i.chance;
-            i.chance = 0;
             break;
         } else {
             randNum -= i.chance;
