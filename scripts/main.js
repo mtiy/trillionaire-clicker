@@ -42,7 +42,9 @@ let prestigeRewards = {
     bobMult: 2,
     aliceMult: 2,
     clickBoostMaxIncrease: 1,
-    hiringFairMax: 5,
+    internMult: 2,
+    hiringFairMaxIncrease: 5,
+    autocloneMultiplierIncrease: 1,
     upgrade(){
         let upgradeText = ``;
         if(this.index === 0){
@@ -62,11 +64,20 @@ let prestigeRewards = {
             upgradeText = `Click Boost maximum permanently increased to ${permanentState.clickBoostMax}`;
         }
         if(this.index === 4){
-            
+            permanentState.internValue *= this.internMult;
+            upgradeText = `Multiplier from each intern permanently increased to ${permanentState.internValue}`;
+        }
+        if(this.index === 5){
+            permanentState.hiringFairMax += this.hiringFairMaxIncrease;
+            upgradeText = `Hiring Fair maximum permanently increased to ${permanentState.hiringFairMax}`;
+        }
+        if(this.index === 6){
+            permanentState.autocloneMultiplier += this.autocloneMultiplierIncrease;
+            upgradeText = `Autoclone efficiency multiplier permanently increased to ${permanentState.autocloneMultiplier}`;
         }
 
         this.index++;
-        if(this.index === 4){
+        if(this.index === 7){
             this.index = 0;
         }
 
@@ -242,7 +253,7 @@ function initializeGame(){
             It just works harder.`,
             effectText: `Autocloner production doubled, cannot manually clone`,
             effect(){
-                autocloneObject.multiplier = 2;
+                autocloneObject.multiplier *= 2;
                 let cloneButtons = document.querySelectorAll(".clone-button");
                 cloneButtons[0].disabled = true;
                 cloneButtons[1].disabled = true;
@@ -502,7 +513,7 @@ function updateState(dt){
         state.unlocks.hasHiringFair = true;
         let autoIntern = new ActivateButton("Job Fair", "hiring", function(){
             undoActivateEffects();
-            document.getElementById("hiringFairText").textContent = `Job Fair (${hiringFair.amount} interns / s)`;
+            document.getElementById("hiringFairText").textContent = `${hiringFair.amount} interns / s`;
             hiringFair.activated = true;
             this.disabled = true;
         });
@@ -621,22 +632,25 @@ function autoclone(ac, dt){
 }
 
 function hireInterns(dt){
-    if(hiringFair.amount < 10 && hiringFair.timer % 6e3 === 0){
-        hiringFair.amount += 1;
-        if(hiringFair.amount === 10){
-            document.getElementById("hiringFairText").textContent = `Job Fair (${hiringFair.amount} interns / s - max)`;
+    if(hiringFair.amount < permanentState.hiringFairMax && hiringFair.timer % 6e3 === 0){
+        hiringFair.amount += permanentState.hiringFairMax/10;
+        if(hiringFair.amount >= permanentState.hiringFairMax){
+            hiringFair.amount = permanentState.hiringFairMax;
+            document.getElementById("hiringFairText").textContent = `${hiringFair.amount} interns / s - max`;
         } else {
-            document.getElementById("hiringFairText").textContent = `Job Fair (${hiringFair.amount} interns / s)`;
+            document.getElementById("hiringFairText").textContent = `${hiringFair.amount} interns / s`;
         }
     }
     people.intern.amount += hiringFair.amount/1000 * dt;
 }
 
 function boostClickPower(dt){
-    let difference = permanentState.clickBoostMax - state.clickStrength;
     if(state.clickStrength <= permanentState.clickBoostMax){
-        // Evenly divide the amount we want to increase over 10 minutes
-        state.clickStrength += (difference/600000) * dt;
+        // Evenly divide the maximum we want to reach over 10 minutes
+        state.clickStrength += (permanentState.clickBoostMax/600000) * dt;
+        if(state.clickStrength > permanentState.clickBoostMax){
+            state.clickStrength = permanentState.clickBoostMax;
+        }
         document.getElementById("clickStrengthText").textContent = `Click Strength: ${state.clickStrength.toFixed(2)} / ${permanentState.clickBoostMax}`;
     }
 }

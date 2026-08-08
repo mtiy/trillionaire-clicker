@@ -159,9 +159,9 @@ body {
 
 .game-over-box {
     min-width: 200px;
-    max-width: 550px;
+    max-width: 600px;
     border: 2px solid black;
-    padding: 4em 2em;
+    padding: 2em;
     opacity: 0;
 }
 
