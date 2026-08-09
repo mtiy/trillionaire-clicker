@@ -87,6 +87,57 @@ let prestigeRewards = {
     
 }
 
+let endgameRewards = [
+    {
+        name: `Click Strength`,
+        available: true,
+        value: 0.5,
+        apply(original){
+            return original + this.value;
+        }
+    },
+    {
+        name: `Bob Spending`,
+        available: true,
+        value: 2,
+        apply(original){
+            return original * this.value;
+        }
+    },
+    {
+        name: `Alice Multiplier`,
+        available: true,
+        value: 2,
+        apply(original){
+            return original * this.value;
+        }
+    },
+    {
+        name: `Click Boost Maximum`,
+        available: true,
+        value: 1,
+        apply(original){
+            return original + this. value;
+        }
+    },
+    {
+        name: `Max Hiring Fair`,
+        available: true,
+        value: 5,
+        apply(original){
+            return original + this.value;
+        }
+    },
+    {
+        name: `Autocloner Production`,
+        available: true,
+        value: 1,
+        apply(original){
+            return original 
+        }
+    }
+]
+
 // Initialize all states and conditions for the purpose of starting a new game
 function initializeGame(){
     state = {
@@ -108,7 +159,8 @@ function initializeGame(){
             billionEvent: false
         },
         killInterns: false,
-        clickPercent: 0
+        clickPercent: 0,
+        roundButtons: false
     };
 
     messages = [
@@ -286,26 +338,30 @@ function initializeGame(){
         },
         {
             chance: 0.3,
-            name: `Getting Closer`,
-            buttonText: `I won't`,
-            flavorText: `You can see it now. Getting closer. Money ticking down. Don't give up.`,
-            effectText: `All production doubled`,
+            name: `Copy of a Copy of a`,
+            buttonText: `I'm sure it's fine!`,
+            flavorText: `An intern comes up with a bright idea. Instead of cloning the original Bob and Alice, why not just clone the clones? 
+            The new clones come out a little...weird...but we can make a lot of them!`,
+            effectText: `Autocloner production x10, Bob and Alice efficiency decreased by 90%`,
             effect(){
-                people.bob.value *= 2;
-                people.alice.value *= 2;
-                people.intern.value *= 2;
-                autocloneObject.multiplier *= 2;
+                people.bob.value *= 0.10;
+                people.alice.value *= 0.10;
+                autocloneObject.multiplier *= 10;
             }
         },
         {
             chance: 0.3,
-            name: `Another Preacher`,
-            buttonText: `Placeholder`,
-            flavorText: `A young man has begun preaching on the street corner. He says we should focus on life, rather than death. Every person who follows his word 
-            takes away some of Mr E's power`,
-            effectText: `Placeholder`,
+            name: `Aesthetic Era`,
+            buttonText: `Ran out of ideas for events, huh?`,
+            flavorText: `You need a change. A new look. A new you. So you pop over to the store. A few minutes later 
+            you've somehow been talked into buying new buttons.`,
+            effectText: `Buttons are round now`,
             effect(){
-                
+                state.roundButtons = true;
+                let buttons = document.querySelectorAll("button");
+                for(i of buttons){
+                    i.classList.add("button-round");
+                }
             }
         },
         {
@@ -341,6 +397,10 @@ function resetDisplay(){
     }
     while(endgameButtons.firstChild){
         endgameButtons.removeChild(endgameButtons.firstChild);
+    }
+
+    for(i of document.querySelectorAll("button")){
+        i.classList.remove("button-round");
     }
 
     gameOverDisplay.hidden = true;
@@ -729,7 +789,7 @@ function manualSpend(){
     updateDisplay();
 }
 
-//
+// Picks a random event from an given array of objects
 function chooseRandomEvent(eventArray){
     let randNum = Math.random();
     console.log(randNum);
@@ -769,6 +829,9 @@ function createRandomEvent(obj){
         eventModal.close();
     });
     exitButton.classList.add("modal-button");
+    if(state.roundButtons){
+        exitButton.classList.add("button-round");
+    }
 
     mainText.append(titleText);
     mainText.append(document.createElement("br"));
