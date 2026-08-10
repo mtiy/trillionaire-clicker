@@ -9,6 +9,7 @@ let secondRandomEvents;
 
 // Used for formatting our money
 const numberFormat1 = new Intl.NumberFormat("en-US", {style: "currency", currency: "USD"});
+const numberFormat2 = new Intl.NumberFormat("en-US", {notation: "scientific", minimumFractionDigits: "4"});
 
 const moneyDisplay = document.querySelector(".money-display");
 const moneyButton = document.querySelector(".money-button");
@@ -19,6 +20,8 @@ const darkModeButton = document.getElementById("darkMode");
 const devModeButton = document.getElementById("devMode");
 const gameOverDisplay = document.querySelector(".game-over-box");
 const endgameButtons = document.querySelector(".button-container");
+const endgameUpgrades = document.querySelector(".endgame-upgrades-container");
+const endgameUpgradesButtons = document.querySelector(".endgame-upgrades-button-container");
 const startModal = document.getElementById("startScreen");
 const hardModeModal = document.getElementById("hardModeStartScreen");
 const restartConfirmModal = document.getElementById("restartConfirm");
@@ -33,110 +36,211 @@ let permanentState = {
     clickBoostMax: 1,
     hiringFairMax: 10,
     internValue: 0.01,
+    misterEValue: 1e-5,
     money: 1e12,
-    totalMoneySpent: 0
-}
-
-let prestigeRewards = {
-    index: 0,
-    clickStrengthUpgrade: 0.5,
-    bobMult: 2,
-    aliceMult: 2,
-    clickBoostMaxIncrease: 1,
-    internMult: 2,
-    hiringFairMaxIncrease: 5,
-    autocloneMultiplierIncrease: 1,
-    upgrade(){
-        let upgradeText = ``;
-        if(this.index === 0){
-            permanentState.baseClickStrength += this.clickStrengthUpgrade;
-            upgradeText = `Click Strength permanently increased to ${permanentState.baseClickStrength.toFixed(2)}`;
-        }
-        if(this.index === 1){
-            permanentState.bobValue *= this.bobMult;
-            upgradeText = `Bob spending per clone permanently increased to ${numberFormat1.format(permanentState.bobValue)}`;
-        }
-        if(this.index === 2){
-            permanentState.aliceValue *= this.aliceMult;
-            upgradeText = `Alice multiplier per clone permanently increased to ${permanentState.aliceValue.toFixed(2)}`;
-        }
-        if(this.index === 3){
-            permanentState.clickBoostMax += this.clickBoostMaxIncrease;
-            upgradeText = `Click Boost maximum permanently increased to ${permanentState.clickBoostMax}`;
-        }
-        if(this.index === 4){
-            permanentState.internValue *= this.internMult;
-            upgradeText = `Multiplier from each intern permanently increased to ${permanentState.internValue}`;
-        }
-        if(this.index === 5){
-            permanentState.hiringFairMax += this.hiringFairMaxIncrease;
-            upgradeText = `Hiring Fair maximum permanently increased to ${permanentState.hiringFairMax}`;
-        }
-        if(this.index === 6){
-            permanentState.autocloneMultiplier += this.autocloneMultiplierIncrease;
-            upgradeText = `Autoclone efficiency multiplier permanently increased to ${permanentState.autocloneMultiplier}`;
-        }
-
-        this.index++;
-        if(this.index === 7){
-            this.index = 0;
-        }
-
-        return upgradeText;
-    }
-    
+    totalMoneySpent: 0,
+    firstPrestige: false,
+    endgameUpgradeCounter: 0
 }
 
 let endgameRewards = [
     {
         name: `Click Strength`,
+        text: `Increase your Click Strength`,
         available: true,
         value: 0.5,
-        apply(original){
+        stateKey: `baseClickStrength`,
+        getUpgrade(original){
             return original + this.value;
+        },
+        applyUpgrade(){
+            permanentState.baseClickStrength = this.getUpgrade(permanentState.baseClickStrength);
+            this.available = false;
+            permanentState.endgameUpgradeCounter++;
         }
     },
     {
         name: `Bob Spending`,
+        text: `Increase spending per Bob`,
         available: true,
         value: 2,
-        apply(original){
+        stateKey: `bobValue`,
+        getUpgrade(original){
             return original * this.value;
+        },
+        applyUpgrade(){
+            permanentState.bobValue = this.getUpgrade(permanentState.bobValue);
+            this.available = false;
+            permanentState.endgameUpgradeCounter++;
         }
     },
     {
         name: `Alice Multiplier`,
+        text: `Increase Alice Multiplier`,
         available: true,
         value: 2,
-        apply(original){
+        stateKey: `aliceValue`,
+        getUpgrade(original){
             return original * this.value;
+        },
+        applyUpgrade(){
+            permanentState.aliceValue = this.getUpgrade(permanentState.aliceValue);
+            this.available = false;
+            permanentState.endgameUpgradeCounter++;
+        }
+    },
+    {
+        name: `Intern Multiplier`,
+        text: `Increase Intern Multiplier`,
+        available: true,
+        value: 2,
+        stateKey: `internValue`,
+        getUpgrade(original){
+            return original * this.value;
+        },
+        applyUpgrade(){
+            permanentState.internValue = this.getUpgrade(permanentState.internValue);
+            this.available = false;
+            permanentState.endgameUpgradeCounter++;
         }
     },
     {
         name: `Click Boost Maximum`,
+        text: `Raise Click Boost Maximum`,
         available: true,
         value: 1,
-        apply(original){
+        stateKey: `clickBoostMax`,
+        getUpgrade(original){
             return original + this. value;
+        },
+        applyUpgrade(){
+            permanentState.clickBoostMax = this.getUpgrade(permanentState.clickBoostMax);
+            this.available = false;
+            permanentState.endgameUpgradeCounter++;
         }
     },
     {
-        name: `Max Hiring Fair`,
+        name: `Hiring Fair Maximum`,
+        text: `Raise Hiring Fair Maximum`,
         available: true,
         value: 5,
-        apply(original){
+        stateKey: `hiringFairMax`,
+        getUpgrade(original){
             return original + this.value;
+        },
+        applyUpgrade(){
+            permanentState.hiringFairMax = this.getUpgrade(permanentState.hiringFairMax);
+            this.available = false;
+            permanentState.endgameUpgradeCounter++;
         }
     },
     {
         name: `Autocloner Production`,
+        text: `Increase Autocloner Production`,
         available: true,
         value: 1,
-        apply(original){
-            return original 
+        stateKey: `autocloneMultiplier`,
+        getUpgrade(original){
+            return original + this.value;
+        },
+        applyUpgrade(){
+            permanentState.autocloneMultiplier = this.getUpgrade(permanentState.autocloneMultiplier);
+            this.available = false;
+            permanentState.endgameUpgradeCounter++;
+        }
+    },
+    {
+        name: `Increase Starting Money`,
+        text: `Going up...`,
+        extraText: `Note: Pressing reset during a run will reset your starting money back to 1 trillion`,
+        available: true,
+        value: 1000,
+        stateKey: `money`,
+        getUpgrade(original){
+            return original * this.value;
+        },
+        applyUpgrade(){
+            permanentState.money = this.getUpgrade(permanentState.money);
+        }
+    },
+    {
+        name: `Increase Upgrades`,
+        text: ``,
+        available: false,
+        value: 2,
+        stateKey: null,
+        getUpgrade(original){
+            return original * this.value;
+        },
+        applyUpgrade(){
+            endgameRewards.forEach((r) => {
+                r.available = true;
+                r.value *= 2;
+            });
+            this.value *= 2;
+            this.available = false;
+            permanentState.misterEValue *= 2;
+            permanentState.endgameUpgradeCounter = 0;
         }
     }
-]
+];
+
+// Creating endgame permanent upgrade options
+function endgameUpgradeScreen(){
+    document.querySelector(".endgame-upgrades-text").textContent = `Choose a permanent upgrade`;
+    let cancelButton = document.createElement("button");
+    cancelButton.textContent = `Nevermind`;
+    cancelButton.classList.add("endgame-modal-button");
+    cancelButton.addEventListener("click", () => {
+        eventModal.close();
+    });
+
+    if(permanentState.endgameUpgradeCounter === 7){
+        endgameRewards[8].available = true;
+    }
+
+    // Loop over our endgame rewards and create a button that opens a yes/no modal
+    endgameRewards.forEach((reward) => {
+        if(reward.available){
+            let b = document.createElement("button");
+            let b2 = document.createElement("button");
+            let topText = document.createElement("div");
+            let upgradeText = document.createElement("div");
+            topText.textContent = reward.text;
+
+            if(reward.name === `Increase Starting Money`){
+                upgradeText.textContent = numberFormat1.format(permanentState[reward.stateKey]) + " to " + "$" + numberFormat2.format(reward.getUpgrade(permanentState[reward.stateKey]));
+                upgradeText.append(document.createElement("br"),document.createTextNode(reward.extraText));
+            } else if(reward.name === `Increase Upgrades`){
+                topText.textContent = `All permanent upgrades get multiplied by ${reward.value}, and will become available again. Mr E sacrifices are twice as effective.`;
+            } else {
+                upgradeText.textContent = permanentState[reward.stateKey] + " to " + reward.getUpgrade(permanentState[reward.stateKey]);
+            }
+
+            b.textContent = reward.name;
+            b.classList.add("endgame-upgrades-button");
+
+            b2.textContent = `Okay`;
+            b2.classList.add("endgame-modal-button");
+            b2.addEventListener("click", () => {
+                reward.applyUpgrade();
+                eventModal.close();
+                endgameUpgrades.hidden = true;
+                endGame();
+            });
+
+            b.addEventListener("click", function(){
+                eventModal.textContent = ``;
+                eventModal.append(topText, document.createElement("br"), upgradeText, b2, cancelButton);
+                eventModal.showModal();
+            });
+
+            endgameUpgradesButtons.append(b);
+        }
+    });
+
+    endgameUpgrades.hidden = false;
+}
 
 // Initialize all states and conditions for the purpose of starting a new game
 function initializeGame(){
@@ -200,7 +304,7 @@ function initializeGame(){
         bob: new Person(0, "Bob", 1, 0.50, 0.70),
         alice: new Person(0, "Alice", 1, 300, 400),
         intern: new Person(permanentState.internValue, "Interns", 0, 2e5, null),
-        misterE: new Person(0, "Mr E", 1e-4, 50e6, null)
+        misterE: new Person(0, "Mr E", permanentState.misterEValue, 50e6, null)
     };
 
     activateButtons = {
@@ -398,6 +502,9 @@ function resetDisplay(){
     while(endgameButtons.firstChild){
         endgameButtons.removeChild(endgameButtons.firstChild);
     }
+    while(endgameUpgradesButtons.firstChild){
+        endgameUpgradesButtons.removeChild(endgameUpgradesButtons.firstChild);
+    }
 
     for(i of document.querySelectorAll("button")){
         i.classList.remove("button-round");
@@ -460,19 +567,10 @@ document.getElementById("hardModeButton").addEventListener("click", () => {
     state.paused = false;
 });
 
+// Restart Game
 document.getElementById("restartYes").addEventListener("click", () => {
     restartConfirmModal.close();
-    permanentState = {
-        baseClickStrength: 0.01,
-        bobValue: 0.01,
-        aliceValue: 0.01,
-        autocloneMultiplier: 1,
-        clickBoostMax: 1,
-        hiringFairMax: 10,
-        internValue: 0.01,
-        money: 1e12,
-        totalMoneySpent: 0
-    }
+    permanentState.money = 1e12;
     initializeGame();
     resetDisplay();
     saveGame();
@@ -652,6 +750,7 @@ function updateState(dt){
         state.unlocks.billionEvent = true;
     }
 
+    // Equation determining how much our money decreases per tick
     let decreaseAmount = people.bob.amount * people.bob.value * (1 + people.alice.amount * people.alice.value) * Math.E**(people.misterE.value);
 
     // Check if game is over
@@ -668,7 +767,7 @@ function updateState(dt){
             updateDisplay();
             moneyButton.hidden = true;
             moneyDisplay.classList.add("shrink-out");
-            setTimeout(() => {endGame()},5000);
+            setTimeout(() => {endgameUpgradeScreen()},5000);
             this.removeEventListener("click", lastClick);
         });
         return;
@@ -844,19 +943,16 @@ function createRandomEvent(obj){
 
 // Creates game over text and handles end of game states (hard mode or normal)
 function endGame(){
-    // Apply upgrade (for now just click strength boost)
-    let text = prestigeRewards.upgrade();
+
     permanentState.totalMoneySpent += state.spentMoney;
 
     // Endgame Text
-    let gameOverText = document.createTextNode(`You find yourself here again. Or is this the first time? Mr. E stares at you, then at the pile of
-    money you've spent. "More", he says, "I need more."`);
+    let t1 = document.createTextNode(`You find yourself here again. Or is this the first time?`);
+    let t2 = document.createTextNode(`Mr E stares at the pile of money you've spent.`);
+    let t3 = document.createTextNode(`"More," he says, "I need more".`);
     let spendText = document.createTextNode(`You have spent a total of ${numberFormat1.format(permanentState.totalMoneySpent)}`);
-    let upgradeText = document.createElement("div");
-    upgradeText.textContent = text;
-    upgradeText.classList.add("permanent-upgrade-text");
 
-    document.querySelector(".game-over-text").append(gameOverText, document.createElement("br"), spendText, document.createElement("br"), upgradeText);
+    document.querySelector(".game-over-text").append(t1,document.createElement("br"),t2,document.createElement("br"),t3,document.createElement("br"),spendText);
 
     // Create play again buttons
     let playAgain = document.createElement("button");
@@ -877,7 +973,7 @@ function endGame(){
         state.paused = true;
         lastTime = null;
         state.hardMode = true;
-        hardModeModal.showModal();
+        hardModeModal.showModal(); 
     });
 
     endgameButtons.append(playAgain, playAgainHard);
