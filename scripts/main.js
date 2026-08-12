@@ -43,6 +43,18 @@ let permanentState = {
     endgameUpgradeCounter: 0
 }
 
+const endgameRewardsInitialValues = {
+    baseClickStrength: 0.5,
+    bobValue: 2,
+    aliceValue: 2,
+    internValue: 2,
+    clickBoostMax: 1,
+    hiringFairMax: 5,
+    autocloneMultiplier: 1,
+    money: 1000,
+    increaseUpgrades: 2
+}
+
 let endgameRewards = [
     {
         name: `Click Strength`,
@@ -150,6 +162,28 @@ let endgameRewards = [
         }
     },
     {
+        name: `Double or Nothing`,
+        text: ``,
+        available: false,
+        value: 2,
+        stateKey: `increaseUpgrades`,
+        getUpgrade(original){
+            return original * this.value;
+        },
+        applyUpgrade(){
+            endgameRewards.forEach((r) => {
+                if(!r.available){
+                    r.available = true;
+                    r.value *= this.value;
+                }
+            });
+            this.value += 2;
+            this.available = false;
+            permanentState.misterEValue *= 2;
+            permanentState.endgameUpgradeCounter = 0;
+        }
+    },
+    {
         name: `Increase Starting Money`,
         text: `Going up...`,
         extraText: `Note: Pressing reset during a run will reset your starting money back to 1 trillion`,
@@ -161,26 +195,6 @@ let endgameRewards = [
         },
         applyUpgrade(){
             permanentState.money = this.getUpgrade(permanentState.money);
-        }
-    },
-    {
-        name: `Increase Upgrades`,
-        text: ``,
-        available: false,
-        value: 2,
-        stateKey: null,
-        getUpgrade(original){
-            return original * this.value;
-        },
-        applyUpgrade(){
-            endgameRewards.forEach((r) => {
-                r.available = true;
-                r.value *= 2;
-            });
-            this.value *= 2;
-            this.available = false;
-            permanentState.misterEValue *= 2;
-            permanentState.endgameUpgradeCounter = 0;
         }
     }
 ];
@@ -196,7 +210,7 @@ function endgameUpgradeScreen(){
     });
 
     if(permanentState.endgameUpgradeCounter === 7){
-        endgameRewards[8].available = true;
+        endgameRewards[7].available = true;
     }
 
     // Loop over our endgame rewards and create a button that opens a yes/no modal
@@ -211,8 +225,8 @@ function endgameUpgradeScreen(){
             if(reward.name === `Increase Starting Money`){
                 upgradeText.textContent = numberFormat1.format(permanentState[reward.stateKey]) + " to " + "$" + numberFormat2.format(reward.getUpgrade(permanentState[reward.stateKey]));
                 upgradeText.append(document.createElement("br"),document.createTextNode(reward.extraText));
-            } else if(reward.name === `Increase Upgrades`){
-                topText.textContent = `All permanent upgrades get multiplied by ${reward.value}, and will become available again. Mr E sacrifices are twice as effective.`;
+            } else if(reward.name === `Double or Nothing`){
+                topText.textContent = `All permanent upgrades get multiplied by ${reward.value}, and will become available again. Mr E sacrifices are twice as effective. This upgrade's value increases by 2`;
             } else {
                 upgradeText.textContent = permanentState[reward.stateKey] + " to " + reward.getUpgrade(permanentState[reward.stateKey]);
             }
@@ -570,12 +584,18 @@ document.getElementById("hardModeButton").addEventListener("click", () => {
 // Restart Game
 document.getElementById("restartYes").addEventListener("click", () => {
     restartConfirmModal.close();
+    restartRun();
+});
+
+// Resets state and display but does not change permanent state (besides starting money reset)
+function restartRun(){
     permanentState.money = 1e12;
+    endgameRewards[8].value = 1000;
     initializeGame();
     resetDisplay();
     saveGame();
     startModal.showModal();
-});
+}
 
 document.getElementById("restartNo").addEventListener("click", () => {
     restartConfirmModal.close();
@@ -943,7 +963,6 @@ function createRandomEvent(obj){
 
 // Creates game over text and handles end of game states (hard mode or normal)
 function endGame(){
-
     permanentState.totalMoneySpent += state.spentMoney;
 
     // Endgame Text
@@ -1008,6 +1027,7 @@ setInterval(function gameLoop(){
     }
 },timeStep);
 
+// Playtesting functions: devMode unlocks everything, trueReset clears all variables including permanent upgrades
 function devMode(){
     people.bob.cost = 0, people.bob.cloneCost = 0;
     people.alice.cost = 0, people.alice.cloneCost = 0;
@@ -1018,15 +1038,54 @@ function devMode(){
     activateButtons.hiring.cost = 0;
 }
 
+function trueReset(){
+    localStorage.clear();
+    permanentState = {
+        baseClickStrength: 0.01,
+        bobValue: 0.01,
+        aliceValue: 0.01,
+        autocloneMultiplier: 1,
+        clickBoostMax: 1,
+        hiringFairMax: 10,
+        internValue: 0.01,
+        misterEValue: 1e-5,
+        money: 1e12,
+        totalMoneySpent: 0,
+        firstPrestige: false,
+        endgameUpgradeCounter: 0
+    }
+    endgameRewards.forEach((reward) => {
+        reward.value = endgameRewardsInitialValues[reward.stateKey];
+        if(reward.name === `Double or Nothing`){
+            reward.available = false;
+        } else {
+            reward.available = true;
+        }
+    });
+    restartRun();
+}
+
+// Save and Load functions using JSON and localStorage
 function saveGame(){
     localStorage.clear();
+
+    // Save the endgame rewards state
+    let endgameRewardsValues = [];
+    endgameRewards.forEach((reward) => {
+        let data = {
+            value: reward.value,
+            available: reward.available
+        };
+        endgameRewardsValues.push(data);
+    });
 
     let save = {
         state: state,
         messages: messages,
         people: people,
         activateButtons: activateButtons,
-        permanentState: permanentState
+        permanentState: permanentState,
+        endgameRewardsValues: endgameRewardsValues
     }
 
     localStorage.setItem("trillionaireClickerSave", JSON.stringify(save));
@@ -1054,6 +1113,11 @@ function loadGame(){
 
     for(i in state.unlocks){
         state.unlocks[i] = false;
+    }
+
+    for(i=0; i<endgameRewards.length; i++){
+        endgameRewards[i].value = save.endgameRewardsValues[i].value;
+        endgameRewards[i].available = save.endgameRewardsValues[i].available;
     }
 }
 
