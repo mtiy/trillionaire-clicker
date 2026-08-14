@@ -13,11 +13,15 @@ const numberFormat2 = new Intl.NumberFormat("en-US", {notation: "scientific", mi
 
 const moneyDisplay = document.querySelector(".money-display");
 const moneyButton = document.querySelector(".money-button");
+const moneyButtonDisplay = document.querySelector(".money-button-container");
 const messageLog = document.querySelector(".message-log");
 const peopleDisplay = document.querySelector(".people-container");
 const clickDisplay = document.querySelector(".click-upgrade-container");
+const optionsDisplay = document.querySelector(".options-banner");
 const darkModeButton = document.getElementById("darkMode");
-const devModeButton = document.getElementById("devMode");
+const mobileOptionsDisplay = document.querySelector(".mobile-options-banner");
+const mobileDarkModeButton = document.getElementById("mobile-dark-mode");
+const mobileResetButton = document.getElementById("mobile-reset");
 const gameOverDisplay = document.querySelector(".game-over-box");
 const endgameButtons = document.querySelector(".button-container");
 const endgameUpgrades = document.querySelector(".endgame-upgrades-container");
@@ -31,10 +35,59 @@ const root = document.querySelector(":root");
 // Mobile buttons, remove notification effect on click
 const mobileButtons = document.querySelectorAll(".mobile-button");
 for(i=0; i<mobileButtons.length; i++){
-    mobileButtons[i].addEventListener("click", () => {
+    mobileButtons[i].addEventListener("click", function(){
         this.classList.remove("mobile-notification");
     });
 }
+
+// Mobile buttons, display relevant section, hide all others
+const mobileHomeButton = document.getElementById("mobile-home-button");
+const mobileEffectsButton = document.getElementById("mobile-effects-button");
+const mobilePeopleButton = document.getElementById("mobile-people-button");
+const mobileOptionsButton = document.getElementById("mobile-options-button");
+
+function hideScreen(elements){
+    elements.forEach((e) => {
+        e.style.display = "none";
+    });
+}
+
+function clearActiveMobileButtons(){
+    mobileButtons.forEach((mb) => {
+        mb.classList.remove("mobile-selected");
+    });
+}
+
+mobileHomeButton.addEventListener("click", function(){
+    hideScreen([peopleDisplay, clickDisplay, mobileOptionsDisplay]);
+    moneyButtonDisplay.style.display = "flex";
+    messageLog.style.display = "block";
+    clearActiveMobileButtons();
+    this.classList.add("mobile-selected");
+});
+
+mobileEffectsButton.addEventListener("click", function(){
+    hideScreen([peopleDisplay, mobileOptionsDisplay, moneyButtonDisplay, messageLog]);
+    clickDisplay.style.display = "block";
+    clearActiveMobileButtons();
+    this.classList.add("mobile-selected");
+});
+
+mobilePeopleButton.addEventListener("click", function(){
+    hideScreen([mobileOptionsDisplay, moneyButtonDisplay, messageLog, clickDisplay]);
+    peopleDisplay.style.display = "block";
+    clearActiveMobileButtons();
+    this.classList.add("mobile-selected");
+});
+
+mobileOptionsButton.addEventListener("click", function(){
+    hideScreen([peopleDisplay, clickDisplay, moneyButtonDisplay, messageLog]);
+    mobileOptionsDisplay.style.display = "flex";
+    clearActiveMobileButtons();
+    this.classList.add("mobile-selected");
+});
+
+
 
 let permanentState = {
     baseClickStrength: 0.01,
@@ -48,7 +101,8 @@ let permanentState = {
     money: 1e12,
     totalMoneySpent: 0,
     firstPrestige: false,
-    endgameUpgradeCounter: 0
+    endgameUpgradeCounter: 0,
+    darkMode: false
 }
 
 const endgameRewardsInitialValues = {
@@ -503,6 +557,10 @@ function initializeGame(){
 
     moneyButton.addEventListener("click", manualSpend);
     moneyButton.textContent = `Spend`;
+    
+    for(i=0; i<mobileButtons.length; i++){
+        mobileButtons[i].classList.remove("mobile-notification");
+    }
 
     updateDisplay();
 }
@@ -542,23 +600,23 @@ function resetDisplay(){
 }
 
 // Dark mode
-darkModeButton.addEventListener("click", () => {
-    if(darkModeButton.textContent === "Dark Mode"){
-        darkModeButton.textContent = "Light Mode";
+function toggleDarkMode(){
+    if(!permanentState.darkMode){
         root.style.setProperty("--button-background-color", `rgb(48, 37, 37)`);
         root.style.setProperty("--button-color", `rgb(187, 187, 186)`);
         root.style.setProperty("--button-background-hover", `rgb(160, 160, 160)`);
         root.style.setProperty("--button-hover-color", `rgb(42, 81, 1)`);
         root.style.setProperty("--button-disabled-color", `rgb(41, 70, 9)`);
         root.style.setProperty("--button-disabled-background", `rgb(162, 163, 151)`);
+        permanentState.darkMode = true;
     } else {
-        darkModeButton.textContent = "Dark Mode";
         root.style.setProperty("--button-background-color", `rgb(226, 230, 193)`);
         root.style.setProperty("--button-color", `rgb(46, 36, 1)`);
         root.style.setProperty("--button-background-hover", `rgb(185, 188, 158)`);
         root.style.setProperty("--button-hover-color", `rgb(56, 105, 3)`);
         root.style.setProperty("--button-disabled-color", `rgb(176, 245, 102)`);
         root.style.setProperty("--button-disabled-background", `rgb(103, 105, 88)`);
+        permanentState.darkMode = false;
     }
     document.body.classList.toggle("dark-mode");
     clickDisplay.classList.toggle("border-dark");
@@ -567,9 +625,33 @@ darkModeButton.addEventListener("click", () => {
     document.querySelectorAll(".modal-popup").forEach((e) => {
         e.classList.toggle("dark-modal");
     });
+}
+
+// Add dark mode function to our desktop and mobile dark mode buttons
+darkModeButton.addEventListener("click", function(){
+    if(this.textContent === "Dark Mode"){
+        this.textContent = "Light Mode";
+    } else {
+        this.textContent = "Dark Mode";
+    }
+    toggleDarkMode();
 });
 
+mobileDarkModeButton.addEventListener("click", function(){
+    if(this.textContent === "Dark Mode"){
+        this.textContent = "Light Mode";
+    } else {
+        this.textContent = "Dark Mode";
+    }
+    toggleDarkMode();
+});
+
+// Reset buttons
 document.getElementById("reset").addEventListener("click", () => {
+    restartConfirmModal.showModal();
+});
+
+mobileResetButton.addEventListener("click", () => {
     restartConfirmModal.showModal();
 });
 
@@ -698,6 +780,7 @@ function updateState(dt){
         people.bob.value = permanentState.bobValue;
         peopleDisplay.append(people.bob.createElement(`${people.bob.name}: Spending ${formatMoney(people.bob.value*people.bob.amount, 10000)} per second`));
         state.unlocks.hasBob = true;
+        mobileButtons[2].classList.add("mobile-notification");
     }
 
     if(!state.unlocks.hasBobClone && round(state.spentMoney) >= people.bob.cloneCost){
@@ -1141,6 +1224,11 @@ function loadGame(){
     for(i=0; i<endgameRewards.length; i++){
         endgameRewards[i].value = save.endgameRewardsValues[i].value;
         endgameRewards[i].available = save.endgameRewardsValues[i].available;
+    }
+
+    if(permanentState.darkMode){
+        permanentState.darkMode = false;
+        toggleDarkMode();
     }
 }
 

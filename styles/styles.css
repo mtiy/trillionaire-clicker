@@ -49,6 +49,10 @@ li {
     background-color: orange;
 }
 
+.mobile-selected {
+    background-color: gray;
+}
+
 .money-container {
     display: flex;
     flex-direction: column;
@@ -56,6 +60,9 @@ li {
     justify-content: center;
     gap: 10px;
     margin: auto;
+    max-width: 75vw;
+    order: 1;
+    margin-top: 1em;
 }
 
 .money-display{
@@ -78,8 +85,10 @@ li {
 }
 
 .message-log {
+    display: block;
     font-size: 1.2em;
     width: 100%;
+    max-width: 300px;
     height: 250px;
     overflow: hidden;
 }
@@ -91,22 +100,32 @@ li {
 
 .people-container {
     display: none;
-    border: 2px solid black;
+    /* border: 2px solid black; */
     padding: 1em 1em;
     font-size: 1.2em;
-    min-width: 350px;
+    /* min-width: 350px; */
     min-height: 320px;
-    margin-right:auto;
+    /* margin-right:auto; */
+    order: 2;
 }
 
 .click-upgrade-container {
     display: none;
-    border: 2px solid black;
+    /* border: 2px solid black; */
     padding: 1em 1em;
     font-size: 1.2em;
-    min-width: 350px;
+    /* min-width: 350px; */
     min-height: 320px;
-    margin-left:auto;
+    /* margin-left:auto; */
+    order: 3;
+}
+
+.mobile-options-banner {
+    display: none;
+    order: 4;
+    flex-direction:column;
+    gap: 1em;
+    margin-top: 2em;
 }
 
 .border-dark {
@@ -115,6 +134,7 @@ li {
 
 .horizontal-wrapper {
     display: flex;
+    flex-direction:column;
 }
 
 .effect-text {
