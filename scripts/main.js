@@ -87,6 +87,12 @@ mobileOptionsButton.addEventListener("click", function(){
     this.classList.add("mobile-selected");
 });
 
+// Add notifications class to mobile buttons
+function addMobileNotification(button){
+    if(!button.classList.contains("mobile-selected")){
+        button.classList.add("mobile-notification");
+    }
+}
 
 
 let permanentState = {
@@ -619,8 +625,8 @@ function toggleDarkMode(){
         permanentState.darkMode = false;
     }
     document.body.classList.toggle("dark-mode");
-    clickDisplay.classList.toggle("border-dark");
-    peopleDisplay.classList.toggle("border-dark");
+    // clickDisplay.classList.toggle("border-dark");
+    // peopleDisplay.classList.toggle("border-dark");
     gameOverDisplay.classList.toggle("game-over-box-dark");
     document.querySelectorAll(".modal-popup").forEach((e) => {
         e.classList.toggle("dark-modal");
@@ -755,6 +761,7 @@ function updateDisplay(){
         m.classList.add("fade-in");
         messages.shift();
         messageLog.prepend(m);
+        addMobileNotification(mobileHomeButton);
     }
     document.querySelectorAll(".message").forEach((element) => {
         if(element.offsetTop > 550){
@@ -780,23 +787,26 @@ function updateState(dt){
         people.bob.value = permanentState.bobValue;
         peopleDisplay.append(people.bob.createElement(`${people.bob.name}: Spending ${formatMoney(people.bob.value*people.bob.amount, 10000)} per second`));
         state.unlocks.hasBob = true;
-        mobileButtons[2].classList.add("mobile-notification");
+        addMobileNotification(mobilePeopleButton);
     }
 
     if(!state.unlocks.hasBobClone && round(state.spentMoney) >= people.bob.cloneCost){
         peopleDisplay.append(people.bob.createCloneButton("Clone"));
         state.unlocks.hasBobClone = true;
+        addMobileNotification(mobilePeopleButton);
     }
 
     if(!state.unlocks.hasAlice && round(state.spentMoney) >= people.alice.cost){
         people.alice.value = permanentState.aliceValue;
         peopleDisplay.append(people.alice.createElement(`${people.alice.name}: Multiply spending by ${1 + people.alice.value*people.alice.amount}`));
         state.unlocks.hasAlice = true;
+        addMobileNotification(mobilePeopleButton);
     }
 
     if(!state.unlocks.hasAliceClone && round(state.spentMoney) >= people.alice.cloneCost){
         peopleDisplay.append(people.alice.createCloneButton("Clone"));
         state.unlocks.hasAliceClone = true;
+        addMobileNotification(mobilePeopleButton);
     }
 
     if(!state.unlocks.unlockedClickBoost && round(state.spentMoney) >= activateButtons.clickUpgrade.cost){
@@ -807,6 +817,7 @@ function updateState(dt){
         });
         clickDisplay.append(clickBoost.createButton("clickStrengthText"));
         state.unlocks.unlockedClickBoost = true;
+        addMobileNotification(mobileEffectsButton);
     }
 
     if(!autocloneObject.unlockedAutocloning && round(state.spentMoney) >= activateButtons.autoclone.cost){
@@ -825,12 +836,14 @@ function updateState(dt){
             this.disabled = true;
         });
         clickDisplay.append(autoBob.createButton("autocloneBobText"), autoAlice.createButton("autocloneAliceText"));
+        addMobileNotification(mobileEffectsButton);
     }
 
     if(!state.unlocks.hasInterns && round(state.spentMoney) >= people.intern.cost){
         peopleDisplay.append(people.intern.createElement(`${people.intern.name}: Multiply autocloning by ${1+people.intern.value*people.intern.amount}`));
         peopleDisplay.append(people.intern.createCloneButton("Hire"));
         state.unlocks.hasInterns = true;
+        addMobileNotification(mobilePeopleButton);
     }
 
     if(!state.unlocks.hasHiringFair && round(state.spentMoney) >= activateButtons.hiring.cost){
@@ -842,6 +855,7 @@ function updateState(dt){
             this.disabled = true;
         });
         clickDisplay.append(autoIntern.createButton("hiringFairText"));
+        addMobileNotification(mobileEffectsButton);
     }
 
     // Million dollar random event
@@ -857,6 +871,7 @@ function updateState(dt){
         peopleDisplay.append(people.misterE.createElement(`${people.misterE.name}: Multiply spending by e^${people.misterE.value.toFixed(4)}`));
         peopleDisplay.append(people.misterE.createSacrificeButton("Sacrifice"));
         state.unlocks.hasMisterE = true;
+        addMobileNotification(mobilePeopleButton);
     }
 
     // Billion dollar random event

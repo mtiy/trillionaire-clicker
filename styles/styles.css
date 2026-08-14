@@ -41,16 +41,19 @@ li {
 }
 
 .mobile-button {
+    font-size: 5vw;
     padding: 1em 0;
     width: 100%;
 }
 
 .mobile-notification {
     background-color: orange;
+    color: black;
 }
 
 .mobile-selected {
     background-color: gray;
+    color: black;
 }
 
 .money-container {
