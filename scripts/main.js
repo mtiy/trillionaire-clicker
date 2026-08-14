@@ -222,9 +222,10 @@ function endgameUpgradeScreen(){
             let upgradeText = document.createElement("div");
             topText.textContent = reward.text;
 
-            if(reward.name === `Increase Starting Money`){
-                upgradeText.textContent = numberFormat1.format(permanentState[reward.stateKey]) + " to " + "$" + numberFormat2.format(reward.getUpgrade(permanentState[reward.stateKey]));
+            if(reward.stateKey === `money`){
+                upgradeText.textContent = formatMoney(permanentState[reward.stateKey], 1e12) + " to " + formatMoney(reward.getUpgrade(permanentState[reward.stateKey]), 1e12);
                 upgradeText.append(document.createElement("br"),document.createTextNode(reward.extraText));
+                b.classList.add("endgame-increase-money-button");
             } else if(reward.name === `Double or Nothing`){
                 topText.textContent = `All permanent upgrades get multiplied by ${reward.value}, and will become available again. Mr E sacrifices are twice as effective. This upgrade's value increases by 2`;
             } else {
@@ -274,7 +275,8 @@ function initializeGame(){
             hasHiringFair: false,
             hasMisterE: false,
             millionEvent: false,
-            billionEvent: false
+            billionEvent: false,
+            moneyText: false
         },
         killInterns: false,
         clickPercent: 0,
@@ -291,26 +293,20 @@ function initializeGame(){
         {condition: 0.50, text: "This is Bob. He can spend money for you automatically."},
         {condition: 0.60, text: "He's not very fast though"},
         {condition: 0.70, text: "Luckily, we can clone him"},
-        {condition: 5, text: "You've spent 5 dollars"},
+        {condition: 1, text: "You've spent 1 dollar"},
         {condition: 50, text: "Your clicks sure aren't doing much, are they?"},
         {condition: 75, text: "Let's boost your click power a bit (also applies to cloning)"},
-        {condition: 100, text: "$100, wow!"},
         {condition: 300, text: "This is Alice. She helps Bob spend more."},
         {condition: 400, text: "Of course, we can clone her too"},
-        {condition: 1000, text: "You've spent a thousand dollars"},
-        {condition: 10000, text: "$10,000 spent now"},
+        {condition: 1000, text: "You've spent 1,000 dollars"},
         {condition: 12000, text: "Wouldn't it be better if you didn't have to click at all?"},
         {condition: 20000, text: "Introducing: autocloning (note: you can only have one effect active at a time)"},
-        {condition: 1e5, text: "You've spent $100,000"},
         {condition: 1.5e5, text: "You can hire some interns to run the autocloner"},
-        {condition: 1e6, text: "1 million dollars"},
+        {condition: 1e6, text: "You've spent 1 million dollars"},
         {condition: 1.5e6, text: "Host a job fair to get more interns (increases the longer you leave it activated)"},
-        {condition: 10e6, text: "10 million"},
         {condition: 50e6, text: "There's a new preacher in town, and his name is Mr. E. He spreads the word of death, and each sacrifice seems to make him stronger..."},
-        {condition: 100e6, text: "100 million"},
         {condition: 1e9, text: "A billion dollars spent and gone"},
-        {condition: 10e9, text: "10 billion"},
-        {condition: 100e9, text: "100 billion. Getting closer"},
+        {condition: 1e11, text: "Money makes the world go round..."},
         {condition: 1e12, text: "1 trillion dollars. But not enough yet"}
     ];
 
@@ -399,7 +395,7 @@ function initializeGame(){
             effect(){
                 let amount = state.spentMoney*100*Math.random();
                 decreaseMoney(amount);
-                this.effectText = `Money decreased by ${numberFormat1.format(amount)}`;
+                this.effectText = `Money decreased by ${formatMoney(amount, 1e12)}`;
             }
         },
         {
@@ -411,7 +407,7 @@ function initializeGame(){
             effect(){
                 let amount = state.spentMoney * 0.3 * Math.random();
                 state.money += amount;
-                this.effectText = `Money increased by ${numberFormat1.format(amount)}`;
+                this.effectText = `Money increased by ${formatMoney(amount, 1e12)}`;
             }
         },
         {
@@ -498,6 +494,7 @@ function initializeGame(){
     ];
 
     moneyButton.addEventListener("click", manualSpend);
+    moneyButton.textContent = `Spend`;
 
     updateDisplay();
 }
@@ -650,8 +647,17 @@ function decreaseMoney(amount){
     state.spentMoney += amount;
 }
 
+// Formatting money - if money is above cap, format with scientific notation
+function formatMoney(amount, cap){
+    if(amount <= cap){
+        return numberFormat1.format(amount);
+    } else {
+        return `$` + numberFormat2.format(amount);
+    }
+}
+
 function updateDisplay(){
-    moneyDisplay.textContent = numberFormat1.format(state.money);
+    moneyDisplay.textContent = formatMoney(state.money, 1e12);
     if(messages.length > 0 && round(state.spentMoney) >= messages[0].condition){
         let m = document.createElement("div");
         m.textContent = messages[0].text;
@@ -667,7 +673,7 @@ function updateDisplay(){
     });
 
     if(state.unlocks.hasBob){
-        document.getElementById(people.bob.name).textContent = `${people.bob.name}s: Spending ${numberFormat1.format(people.bob.value*people.bob.amount)} per second`;
+        document.getElementById(people.bob.name).textContent = `${people.bob.name}s: Spending ${formatMoney(people.bob.value*people.bob.amount, 10000)} per second`;
     }
 
     if(state.unlocks.hasAlice){
@@ -682,7 +688,7 @@ function updateDisplay(){
 function updateState(dt){
     if(!state.unlocks.hasBob && round(state.spentMoney) >= people.bob.cost){
         people.bob.value = permanentState.bobValue;
-        peopleDisplay.append(people.bob.createElement(`${people.bob.name}: Spending ${numberFormat1.format(people.bob.value*people.bob.amount)} per second`));
+        peopleDisplay.append(people.bob.createElement(`${people.bob.name}: Spending ${formatMoney(people.bob.value*people.bob.amount, 10000)} per second`));
         state.unlocks.hasBob = true;
     }
 
@@ -768,6 +774,12 @@ function updateState(dt){
         createRandomEvent(event);
         eventModal.showModal();
         state.unlocks.billionEvent = true;
+    }
+
+    // Change money button text
+    if(!state.unlocks.moneyText && round(state.spentMoney) >= 1e11){
+        moneyButton.textContent = `More`;
+        state.unlocks.moneyText = true;
     }
 
     // Equation determining how much our money decreases per tick
@@ -969,9 +981,12 @@ function endGame(){
     let t1 = document.createTextNode(`You find yourself here again. Or is this the first time?`);
     let t2 = document.createTextNode(`Mr E stares at the pile of money you've spent.`);
     let t3 = document.createTextNode(`"More," he says, "I need more".`);
-    let spendText = document.createTextNode(`You have spent a total of ${numberFormat1.format(permanentState.totalMoneySpent)}`);
+    let spendText = document.createTextNode(`You have spent a total of ${formatMoney(permanentState.totalMoneySpent, 1e12)}`);
+    let thoughtText = document.createElement("div");
+    thoughtText.textContent = `I spent a trillion dollars, how much more could he want?`;
+    thoughtText.classList.add("thought-text");
 
-    document.querySelector(".game-over-text").append(t1,document.createElement("br"),t2,document.createElement("br"),t3,document.createElement("br"),spendText);
+    document.querySelector(".game-over-text").append(t1,document.createElement("br"),t2,document.createElement("br"),t3,document.createElement("br"),spendText, document.createElement("br"), thoughtText);
 
     // Create play again buttons
     let playAgain = document.createElement("button");
