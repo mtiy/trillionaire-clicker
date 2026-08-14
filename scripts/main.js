@@ -28,6 +28,14 @@ const restartConfirmModal = document.getElementById("restartConfirm");
 const eventModal = document.getElementById("eventModal");
 const root = document.querySelector(":root");
 
+// Mobile buttons, remove notification effect on click
+const mobileButtons = document.querySelectorAll(".mobile-button");
+for(i=0; i<mobileButtons.length; i++){
+    mobileButtons[i].addEventListener("click", () => {
+        this.classList.remove("mobile-notification");
+    });
+}
+
 let permanentState = {
     baseClickStrength: 0.01,
     bobValue: 0.01,
