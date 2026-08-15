@@ -625,8 +625,8 @@ function toggleDarkMode(){
         permanentState.darkMode = false;
     }
     document.body.classList.toggle("dark-mode");
-    // clickDisplay.classList.toggle("border-dark");
-    // peopleDisplay.classList.toggle("border-dark");
+    clickDisplay.classList.toggle("border-dark");
+    peopleDisplay.classList.toggle("border-dark");
     gameOverDisplay.classList.toggle("game-over-box-dark");
     document.querySelectorAll(".modal-popup").forEach((e) => {
         e.classList.toggle("dark-modal");
