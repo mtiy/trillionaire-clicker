@@ -14,6 +14,7 @@ const numberFormat2 = new Intl.NumberFormat("en-US", {notation: "scientific", mi
 const moneyDisplay = document.querySelector(".money-display");
 const moneyButton = document.querySelector(".money-button");
 const moneyButtonDisplay = document.querySelector(".money-button-container");
+const moneyContainer = document.querySelector(".money-container");
 const messageLog = document.querySelector(".message-log");
 const peopleDisplay = document.querySelector(".people-container");
 const clickDisplay = document.querySelector(".click-upgrade-container");
@@ -46,9 +47,27 @@ const mobileEffectsButton = document.getElementById("mobile-effects-button");
 const mobilePeopleButton = document.getElementById("mobile-people-button");
 const mobileOptionsButton = document.getElementById("mobile-options-button");
 
-function hideScreen(elements){
+// Hiding sets of elements, used for mobile and for end game display hiding
+function hideScreen(elements, type){
+    if(type === `display`){
+        elements.forEach((e) => {
+            e.style.display = "none";
+        });
+    } else if(type === `visibility`){
+        elements.forEach((e) => {
+            e.style.visibility = `hidden`;
+        });
+    } else {
+        console.log("Error: Incorrect type");
+    }
+
+}
+
+// Removes extra display/visibility css that we placed on elements using hideScreen - should default to what's written in the stylesheet
+function showScreen(elements){
     elements.forEach((e) => {
-        e.style.display = "none";
+        e.style.display = ``;
+        e.style.visibility = ``;
     });
 }
 
@@ -59,7 +78,7 @@ function clearActiveMobileButtons(){
 }
 
 mobileHomeButton.addEventListener("click", function(){
-    hideScreen([peopleDisplay, clickDisplay, mobileOptionsDisplay]);
+    hideScreen([peopleDisplay, clickDisplay, mobileOptionsDisplay], `display`);
     moneyButtonDisplay.style.display = "flex";
     messageLog.style.display = "block";
     clearActiveMobileButtons();
@@ -67,21 +86,21 @@ mobileHomeButton.addEventListener("click", function(){
 });
 
 mobileEffectsButton.addEventListener("click", function(){
-    hideScreen([peopleDisplay, mobileOptionsDisplay, moneyButtonDisplay, messageLog]);
+    hideScreen([peopleDisplay, mobileOptionsDisplay, moneyButtonDisplay, messageLog], `display`);
     clickDisplay.style.display = "block";
     clearActiveMobileButtons();
     this.classList.add("mobile-selected");
 });
 
 mobilePeopleButton.addEventListener("click", function(){
-    hideScreen([mobileOptionsDisplay, moneyButtonDisplay, messageLog, clickDisplay]);
+    hideScreen([mobileOptionsDisplay, moneyButtonDisplay, messageLog, clickDisplay], `display`);
     peopleDisplay.style.display = "block";
     clearActiveMobileButtons();
     this.classList.add("mobile-selected");
 });
 
 mobileOptionsButton.addEventListener("click", function(){
-    hideScreen([peopleDisplay, clickDisplay, moneyButtonDisplay, messageLog]);
+    hideScreen([peopleDisplay, clickDisplay, moneyButtonDisplay, messageLog], `display`);
     mobileOptionsDisplay.style.display = "flex";
     clearActiveMobileButtons();
     this.classList.add("mobile-selected");
@@ -598,11 +617,7 @@ function resetDisplay(){
     moneyDisplay.classList.remove("shrink-out");
     eventModal.textContent = ``;
     document.querySelector(".game-over-text").textContent = ``;
-
-    moneyButton.hidden = false;
-    peopleDisplay.hidden = false;
-    clickDisplay.hidden = false;
-    messageLog.hidden = false;
+    showScreen([moneyButton, peopleDisplay, clickDisplay, messageLog, moneyContainer]);
 }
 
 // Dark mode
@@ -627,7 +642,6 @@ function toggleDarkMode(){
     document.body.classList.toggle("dark-mode");
     clickDisplay.classList.toggle("border-dark");
     peopleDisplay.classList.toggle("border-dark");
-    gameOverDisplay.classList.toggle("game-over-box-dark");
     document.querySelectorAll(".modal-popup").forEach((e) => {
         e.classList.toggle("dark-modal");
     });
@@ -896,24 +910,18 @@ function updateState(dt){
         state.paused = true;
         state.money = 0.01;
         updateDisplay();
-        peopleDisplay.style.visibility = `hidden`;
-        clickDisplay.style.visibility = `hidden`;
-        messageLog.style.visibility = `hidden`;
+        hideScreen([peopleDisplay, clickDisplay, messageLog], `visibility`);
         moneyButton.removeEventListener("click", manualSpend);
         moneyButton.addEventListener("click", function lastClick(){
+            this.removeEventListener("click", lastClick);
             state.money = 0;
             updateDisplay();
-            moneyButton.style.visibility = `hidden`;
+            hideScreen([moneyButton], `visibility`);
             moneyDisplay.classList.add("shrink-out");
             setTimeout(() => {
-                peopleDisplay.style.display = `none`;
-                clickDisplay.style.display = `none`;
-                messageLog.style.display = `none`;
-                moneyButton.style.display = `none`;
-                document.querySelector(".money-container").style.display = `none`;
+                hideScreen([peopleDisplay, clickDisplay, messageLog, moneyButton, moneyContainer], `display`);
                 endgameUpgradeScreen();
             },5000);
-            this.removeEventListener("click", lastClick);
         });
         return;
     }

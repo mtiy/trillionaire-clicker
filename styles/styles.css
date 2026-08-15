@@ -21,6 +21,7 @@ button:disabled {
 body {
     background-color: rgb(250, 253, 203);
     color: black;
+    font-family:Arial, Helvetica, sans-serif;
 }
 
 menu {
@@ -36,7 +37,7 @@ li {
 }
 
 .mobile-button {
-    font-size: 5vw;
+    font-size: calc(1em + 1vw);
     padding: 1em 0;
     width: 100%;
 }
@@ -58,7 +59,6 @@ li {
     justify-content: center;
     gap: 10px;
     order: 1;
-    margin-top: 1em;
 }
 
 .money-display{
@@ -242,15 +242,12 @@ li {
 }
 
 .game-over-text {
-    font-size: 1.5em;
+    font-size: calc(1em + .7vw);
     line-height: 2.0;
 }
 
 .game-over-box {
-    min-width: 20em;
-    max-width: 40em;
-    border: 2px solid black;
-    padding: 2em;
+    max-width: 100%;
     opacity: 0;
     margin-left:auto;
     margin-right:auto;
@@ -258,10 +255,6 @@ li {
 
 .permanent-upgrade-text {
     font-weight: bold;
-}
-
-.game-over-box-dark {
-    border: 2px solid rgb(187, 162, 63);
 }
 
 .end-game-button {
@@ -350,7 +343,6 @@ li {
         flex-direction: row;
         gap: 2em;
         margin-top: 3em;
-        font-family: sans-serif;
         font-size: calc(.5em + .5vw);
     }
 
@@ -374,7 +366,6 @@ li {
         align-items: center;
         justify-content: center;
         gap: 10px;
-        margin-top: 1em;
         order: 2;
     }
 
