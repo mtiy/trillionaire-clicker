@@ -896,16 +896,22 @@ function updateState(dt){
         state.paused = true;
         state.money = 0.01;
         updateDisplay();
-        peopleDisplay.hidden = true;
-        clickDisplay.hidden = true;
-        messageLog.hidden = true;
+        peopleDisplay.style.visibility = `hidden`;
+        clickDisplay.style.visibility = `hidden`;
+        messageLog.style.visibility = `hidden`;
         moneyButton.removeEventListener("click", manualSpend);
         moneyButton.addEventListener("click", function lastClick(){
             state.money = 0;
             updateDisplay();
-            moneyButton.hidden = true;
+            moneyButton.style.visibility = `hidden`;
             moneyDisplay.classList.add("shrink-out");
-            setTimeout(() => {endgameUpgradeScreen()},5000);
+            setTimeout(() => {
+                peopleDisplay.style.display = `none`;
+                clickDisplay.style.display = `none`;
+                messageLog.style.display = `none`;
+                moneyButton.style.display = `none`;
+                endgameUpgradeScreen();
+            },5000);
             this.removeEventListener("click", lastClick);
         });
         return;

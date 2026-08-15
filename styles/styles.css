@@ -329,7 +329,7 @@ li {
 }
 
 /* If the screen is large enough, switch to a column layout that displays all the information on one page */
-@media screen and (width >= 87em){
+@media screen and (width >= 77em){
     .mobile-tabs{
         display: none;
     }
