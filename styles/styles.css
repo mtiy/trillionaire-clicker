@@ -189,6 +189,11 @@ li {
     margin-top: 20px;
 }
 
+.endgame-upgrades-container {
+    margin-left: auto;
+    margin-right: auto;
+}
+
 .endgame-upgrades-text {
     font-size: 2em;
 }
@@ -242,11 +247,13 @@ li {
 }
 
 .game-over-box {
-    min-width: 200px;
-    max-width: 600px;
+    min-width: 20em;
+    max-width: 40em;
     border: 2px solid black;
     padding: 2em;
     opacity: 0;
+    margin-left:auto;
+    margin-right:auto;
 }
 
 .permanent-upgrade-text {
@@ -341,7 +348,7 @@ li {
 
     .horizontal-wrapper {
         flex-direction: row;
-        gap: 4em;
+        gap: 2em;
         margin-top: 3em;
         font-family: sans-serif;
         font-size: calc(.5em + .5vw);
@@ -367,7 +374,6 @@ li {
         align-items: center;
         justify-content: center;
         gap: 10px;
-        min-width: 25em;
         margin-top: 1em;
         order: 2;
     }
@@ -401,8 +407,8 @@ li {
     .message-log {
         display: block;
         font-size: 1.2em;
-        width: 100%;
-        max-width: 20em;
+        padding: 1em;
+        min-width: 22em;
         height: 250px;
         overflow: hidden;
         order: 3;

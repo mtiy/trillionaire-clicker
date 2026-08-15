@@ -910,6 +910,7 @@ function updateState(dt){
                 clickDisplay.style.display = `none`;
                 messageLog.style.display = `none`;
                 moneyButton.style.display = `none`;
+                document.querySelector(".money-container").style.display = `none`;
                 endgameUpgradeScreen();
             },5000);
             this.removeEventListener("click", lastClick);
