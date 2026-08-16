@@ -6,6 +6,7 @@ let hiringFair;
 let autocloneObject;
 let firstRandomEvents;
 let secondRandomEvents;
+let activateButtonsStatus;
 
 // Used for formatting our money
 const numberFormat1 = new Intl.NumberFormat("en-US", {style: "currency", currency: "USD"});
@@ -431,17 +432,21 @@ function initializeGame(){
                 autocloneObject.bobAmount = 0;
                 autocloneObject.aliceAmount = 0;
                 autocloneObject.autocloneActivated = false;
+                activateButtons.autoclone.activated = false;
             },
-            cost: 20000
+            cost: 20000,
+            activated: false
         },
         hiring: {
             removeUpgrade(){
                 hiringFair.timer = 0;
                 hiringFair.amount = 1;
                 hiringFair.activated = false;
+                activateButtons.hiring.activated = false;
                 document.getElementById("hiringFairText").textContent = `Job Fair`;
             },
-            cost: 1.5e6
+            cost: 1.5e6,
+            activated: false
         }
     };
 
@@ -647,6 +652,7 @@ function toggleDarkMode(){
         root.style.setProperty("--button-disabled-color", `rgb(41, 70, 9)`);
         root.style.setProperty("--button-disabled-background", `rgb(162, 163, 151)`);
         permanentState.darkMode = true;
+        darkModeButton.textContent = "Light Mode";
     } else {
         root.style.setProperty("--button-background-color", `rgb(226, 230, 193)`);
         root.style.setProperty("--button-color", `rgb(46, 36, 1)`);
@@ -655,6 +661,7 @@ function toggleDarkMode(){
         root.style.setProperty("--button-disabled-color", `rgb(176, 245, 102)`);
         root.style.setProperty("--button-disabled-background", `rgb(103, 105, 88)`);
         permanentState.darkMode = false;
+        darkModeButton.textContent = "Dark Mode";
     }
     document.body.classList.toggle("dark-mode");
     clickDisplay.classList.toggle("border-dark");
@@ -665,14 +672,7 @@ function toggleDarkMode(){
 }
 
 // Add dark mode function to our desktop and mobile dark mode buttons
-darkModeButton.addEventListener("click", function(){
-    if(this.textContent === "Dark Mode"){
-        this.textContent = "Light Mode";
-    } else {
-        this.textContent = "Dark Mode";
-    }
-    toggleDarkMode();
-});
+darkModeButton.addEventListener("click", toggleDarkMode);
 
 mobileDarkModeButton.addEventListener("click", function(){
     if(this.textContent === "Dark Mode"){
@@ -868,10 +868,15 @@ function updateState(dt){
             undoActivateEffects();
             activateButtons.clickUpgrade.activated = true;
             this.disabled = true;
+            activateButtonsStatus = this.id;
         });
         clickDisplay.append(clickBoost.createButton("clickStrengthText"));
         state.unlocks.unlockedClickBoost = true;
         addMobileNotification(mobileEffectsButton);
+        if(activateButtonsStatus === "clickUpgrade"){
+            document.getElementById("clickUpgrade").disabled = true;
+            console.log("Disabled");
+        }
     }
 
     if(!autocloneObject.unlockedAutocloning && round(state.spentMoney) >= activateButtons.autoclone.cost){
@@ -880,17 +885,28 @@ function updateState(dt){
         let autoBob = new ActivateButton("Autoclone Bobs", "autoclone", function(){
             undoActivateEffects();
             autocloneObject.autocloneActivated = true;
+            activateButtons.autoclone.activated = true;
             autocloneObject.bobAmount++;
             this.disabled = true;
+            activateButtonsStatus = "bob";
         });
         let autoAlice = new ActivateButton("Autoclone Alices", "autoclone", function(){
             undoActivateEffects();
             autocloneObject.autocloneActivated = true;
+            activateButtons.autoclone.activated = true;
             autocloneObject.aliceAmount++;
             this.disabled = true;
+            activateButtonsStatus = "alice";
         });
         clickDisplay.append(autoBob.createButton("autocloneBobText"), autoAlice.createButton("autocloneAliceText"));
         addMobileNotification(mobileEffectsButton);
+        let aButtons = document.querySelectorAll(".activate-button");
+        if(activateButtonsStatus === "bob"){
+            aButtons[1].disabled = true;
+        }
+        if(activateButtonsStatus === "alice"){
+            aButtons[2].disabled = true;
+        }
     }
 
     if(!state.unlocks.hasInterns && round(state.spentMoney) >= people.intern.cost){
@@ -906,10 +922,15 @@ function updateState(dt){
             undoActivateEffects();
             document.getElementById("hiringFairText").textContent = `${hiringFair.amount} interns / s`;
             hiringFair.activated = true;
+            activateButtons.hiring.activated = true;
             this.disabled = true;
+            activateButtonsStatus = this.id;
         });
         clickDisplay.append(autoIntern.createButton("hiringFairText"));
         addMobileNotification(mobileEffectsButton);
+        if(activateButtonsStatus === "hiring"){
+            document.getElementById("hiring").disabled = true;
+        }
     }
 
     // Million dollar random event
@@ -1263,7 +1284,10 @@ function saveGame(){
         people: people,
         activateButtons: activateButtons,
         permanentState: permanentState,
-        endgameRewardsValues: endgameRewardsValues
+        endgameRewardsValues: endgameRewardsValues,
+        autocloneObject: autocloneObject,
+        hiringFair: hiringFair,
+        activateButtonsStatus: activateButtonsStatus
     }
 
     localStorage.setItem("trillionaireClickerSave", JSON.stringify(save));
@@ -1287,7 +1311,14 @@ function loadGame(){
 
     for(ab in activateButtons){
         activateButtons[ab].cost = save.activateButtons[ab].cost;
+        activateButtons[ab].activated = save.activateButtons[ab].activated;
     }
+
+    autocloneObject = save.autocloneObject;
+    autocloneObject.unlockedAutocloning = false;
+    hiringFair = save.hiringFair;
+
+    activateButtonsStatus = save.activateButtonsStatus;
 
     for(i in state.unlocks){
         state.unlocks[i] = false;
