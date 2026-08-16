@@ -10,6 +10,8 @@ let secondRandomEvents;
 // Used for formatting our money
 const numberFormat1 = new Intl.NumberFormat("en-US", {style: "currency", currency: "USD"});
 const numberFormat2 = new Intl.NumberFormat("en-US", {notation: "scientific", minimumFractionDigits: "4"});
+const numberFormat3 = new Intl.NumberFormat("en-US", {maximumFractionDigits:"0"});
+const numberFormat4 = new Intl.NumberFormat("en-US", {notation: "scientific", maximumFractionDigits: "2"});
 
 const moneyDisplay = document.querySelector(".money-display");
 const moneyButton = document.querySelector(".money-button");
@@ -32,6 +34,8 @@ const hardModeModal = document.getElementById("hardModeStartScreen");
 const restartConfirmModal = document.getElementById("restartConfirm");
 const eventModal = document.getElementById("eventModal");
 const root = document.querySelector(":root");
+
+document.getElementById("mobile-true-reset").addEventListener("click", trueReset);
 
 // Mobile buttons, remove notification effect on click
 const mobileButtons = document.querySelectorAll(".mobile-button");
@@ -300,6 +304,11 @@ function endgameUpgradeScreen(){
         endgameRewards[7].available = true;
     }
 
+    // Clear out the buttons if there are any
+    while(endgameUpgradesButtons.firstChild){
+        endgameUpgradesButtons.removeChild(endgameUpgradesButtons.firstChild);
+    }
+
     // Loop over our endgame rewards and create a button that opens a yes/no modal
     endgameRewards.forEach((reward) => {
         if(reward.available){
@@ -361,9 +370,12 @@ function initializeGame(){
             hasInterns: false,
             hasHiringFair: false,
             hasMisterE: false,
-            millionEvent: false,
-            billionEvent: false,
             moneyText: false
+        },
+        events: {
+            firstEvent: false,
+            secondEvent: false,
+            automation: false
         },
         killInterns: false,
         clickPercent: 0,
@@ -388,7 +400,7 @@ function initializeGame(){
         {condition: 1000, text: "You've spent 1,000 dollars"},
         {condition: 12000, text: "Wouldn't it be better if you didn't have to click at all?"},
         {condition: 20000, text: "Introducing: autocloning (note: you can only have one effect active at a time)"},
-        {condition: 1.5e5, text: "You can hire some interns to run the autocloner"},
+        {condition: 2e5, text: "You can hire some interns to run the autocloner"},
         {condition: 1e6, text: "You've spent 1 million dollars"},
         {condition: 1.5e6, text: "Host a job fair to get more interns (increases the longer you leave it activated)"},
         {condition: 50e6, text: "There's a new preacher in town, and his name is Mr. E. He spreads the word of death, and each sacrifice seems to make him stronger..."},
@@ -420,7 +432,7 @@ function initializeGame(){
                 autocloneObject.aliceAmount = 0;
                 autocloneObject.autocloneActivated = false;
             },
-            cost: 16000
+            cost: 20000
         },
         hiring: {
             removeUpgrade(){
@@ -507,9 +519,11 @@ function initializeGame(){
             effectText: `Autocloner production doubled, cannot manually clone`,
             effect(){
                 autocloneObject.multiplier *= 2;
+                state.events.automation = true;
                 let cloneButtons = document.querySelectorAll(".clone-button");
                 cloneButtons[0].disabled = true;
                 cloneButtons[1].disabled = true;
+
             }
         },
         {
@@ -611,6 +625,9 @@ function resetDisplay(){
     for(i of document.querySelectorAll("button")){
         i.classList.remove("button-round");
     }
+
+    document.querySelector(".endgame-upgrades-text").textContent = ``;
+    endgameUpgrades.hidden = true;
 
     gameOverDisplay.hidden = true;
     gameOverDisplay.classList.remove("fade-in");
@@ -740,13 +757,7 @@ class Person{
         sb.textContent = buttonText;
         sb.classList.add("clone-button");
         sb.addEventListener("click", () => {
-            let arr = [people.bob.amount-1, people.alice.amount-1];
-            let expIncrease = ((people.bob.amount-1) + (people.alice.amount-1)) * people.misterE.amount; // amount for Mister E is the increase per person
-
-            people.misterE.value += expIncrease;
-            people.bob.amount = 1;
-            people.alice.amount = 1;
-            document.getElementById(people.misterE.name).textContent = `${people.misterE.name}: Multiply spending by e^${people.misterE.value.toFixed(4)}`;
+            sacrifice([people.bob.amount-1, people.alice.amount-1, people.intern.amount]);
         });
         return sb;
     }
@@ -757,12 +768,35 @@ function decreaseMoney(amount){
     state.spentMoney += amount;
 }
 
+// Mister E sacrifice calculation
+function sacrifice(peopleArray){
+    let total = 0;
+    for(i=0; i < peopleArray.length; i++){
+        total += peopleArray[i];
+    }
+    
+    let expIncrease = total * people.misterE.amount;
+    people.misterE.value += expIncrease;
+    people.bob.amount = 1;
+    people.alice.amount = 1;
+    people.intern.amount = 0;
+    document.getElementById(people.misterE.name).textContent = `${people.misterE.name}: Multiply spending by e^${people.misterE.value.toFixed(4)}`;
+}
+
 // Formatting money - if money is above cap, format with scientific notation
 function formatMoney(amount, cap){
     if(amount <= cap){
         return numberFormat1.format(amount);
     } else {
         return `$` + numberFormat2.format(amount);
+    }
+}
+
+function formatPeople(amount, cap){
+    if(amount <= cap){
+        return numberFormat3.format(amount);
+    } else {
+        return numberFormat2.format(amount);
     }
 }
 
@@ -784,11 +818,11 @@ function updateDisplay(){
     });
 
     if(state.unlocks.hasBob){
-        document.getElementById(people.bob.name).textContent = `${people.bob.name}s: Spending ${formatMoney(people.bob.value*people.bob.amount, 10000)} per second`;
+        document.getElementById(people.bob.name).textContent = `${formatPeople(people.bob.amount, 1e6)} ${people.bob.name}s: Spending ${formatMoney(people.bob.value*people.bob.amount, 10000)} per second`;
     }
 
     if(state.unlocks.hasAlice){
-        document.getElementById(people.alice.name).textContent = `${people.alice.name}s: Multiply spending by ${(1+people.alice.value*people.alice.amount).toFixed(2)}`;
+        document.getElementById(people.alice.name).textContent = `${formatPeople(people.alice.amount, 1e6)} ${people.alice.name}s: Multiply spending by ${(1+people.alice.value*people.alice.amount).toFixed(2)}`;
     }
 
     if(state.unlocks.hasInterns){
@@ -808,6 +842,9 @@ function updateState(dt){
         peopleDisplay.append(people.bob.createCloneButton("Clone"));
         state.unlocks.hasBobClone = true;
         addMobileNotification(mobilePeopleButton);
+        if(state.events.automation){
+            document.querySelectorAll(".clone-button")[0].disabled = true;
+        }
     }
 
     if(!state.unlocks.hasAlice && round(state.spentMoney) >= people.alice.cost){
@@ -821,6 +858,9 @@ function updateState(dt){
         peopleDisplay.append(people.alice.createCloneButton("Clone"));
         state.unlocks.hasAliceClone = true;
         addMobileNotification(mobilePeopleButton);
+        if(state.events.automation){
+            document.querySelectorAll(".clone-button")[1].disabled = true;
+        }
     }
 
     if(!state.unlocks.unlockedClickBoost && round(state.spentMoney) >= activateButtons.clickUpgrade.cost){
@@ -873,11 +913,11 @@ function updateState(dt){
     }
 
     // Million dollar random event
-    if(!state.unlocks.millionEvent && round(state.spentMoney) >= 1e6){
+    if(!state.events.firstEvent && round(state.spentMoney) >= 1e6){
         let event = chooseRandomEvent(firstRandomEvents);
         createRandomEvent(event);
         eventModal.showModal();
-        state.unlocks.millionEvent = true;
+        state.events.firstEvent = true;
     }
 
     // Unlocking Mr E
@@ -889,11 +929,11 @@ function updateState(dt){
     }
 
     // Billion dollar random event
-    if(!state.unlocks.billionEvent && round(state.spentMoney) >= 1e9){
+    if(!state.events.secondEvent && round(state.spentMoney) >= 1e9){
         let event = chooseRandomEvent(secondRandomEvents);
         createRandomEvent(event);
         eventModal.showModal();
-        state.unlocks.billionEvent = true;
+        state.events.secondEvent = true;
     }
 
     // Change money button text
@@ -913,7 +953,6 @@ function updateState(dt){
         hideScreen([peopleDisplay, clickDisplay, messageLog], `visibility`);
         moneyButton.removeEventListener("click", manualSpend);
         moneyButton.addEventListener("click", function lastClick(){
-            this.removeEventListener("click", lastClick);
             state.money = 0;
             updateDisplay();
             hideScreen([moneyButton], `visibility`);
@@ -921,7 +960,9 @@ function updateState(dt){
             setTimeout(() => {
                 hideScreen([peopleDisplay, clickDisplay, messageLog, moneyButton, moneyContainer], `display`);
                 endgameUpgradeScreen();
+                console.log("Ending game");
             },5000);
+            this.removeEventListener("click", lastClick);
         });
         return;
     }
@@ -1092,6 +1133,7 @@ function createRandomEvent(obj){
     mainText.append(effdiv);
 
     eventModal.append(mainText, exitButton);
+    messageLog.prepend(titleText.textContent + `: ` + effdiv.textContent);
 }
 
 // Creates game over text and handles end of game states (hard mode or normal)
