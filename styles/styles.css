@@ -322,7 +322,7 @@ li {
 }
 
 @media (hover: hover){
-    button:hover {
+    button:hover:enabled {
         background-color: var(--button-background-hover);
         color: var(--button-hover-color);
     }

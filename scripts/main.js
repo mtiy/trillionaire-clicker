@@ -634,6 +634,8 @@ function resetDisplay(){
     document.querySelector(".endgame-upgrades-text").textContent = ``;
     endgameUpgrades.hidden = true;
 
+    activateButtonsStatus = "";
+
     gameOverDisplay.hidden = true;
     gameOverDisplay.classList.remove("fade-in");
     moneyDisplay.classList.remove("shrink-out");
