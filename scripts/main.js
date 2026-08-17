@@ -36,8 +36,6 @@ const restartConfirmModal = document.getElementById("restartConfirm");
 const eventModal = document.getElementById("eventModal");
 const root = document.querySelector(":root");
 
-document.getElementById("mobile-true-reset").addEventListener("click", trueReset);
-
 // Mobile buttons, remove notification effect on click
 const mobileButtons = document.querySelectorAll(".mobile-button");
 for(i=0; i<mobileButtons.length; i++){
@@ -152,7 +150,7 @@ let endgameRewards = [
         name: `Click Strength`,
         text: `Increase your Click Strength`,
         available: true,
-        value: 0.5,
+        value: 0.99,
         stateKey: `baseClickStrength`,
         getUpgrade(original){
             return original + this.value;
@@ -167,7 +165,7 @@ let endgameRewards = [
         name: `Bob Spending`,
         text: `Increase spending per Bob`,
         available: true,
-        value: 2,
+        value: 10,
         stateKey: `bobValue`,
         getUpgrade(original){
             return original * this.value;
@@ -197,7 +195,7 @@ let endgameRewards = [
         name: `Intern Multiplier`,
         text: `Increase Intern Multiplier`,
         available: true,
-        value: 2,
+        value: 10,
         stateKey: `internValue`,
         getUpgrade(original){
             return original * this.value;
@@ -1235,33 +1233,6 @@ function devMode(){
     activateButtons.clickUpgrade.cost = 0;
     activateButtons.autoclone.cost = 0;
     activateButtons.hiring.cost = 0;
-}
-
-function trueReset(){
-    localStorage.clear();
-    permanentState = {
-        baseClickStrength: 0.01,
-        bobValue: 0.01,
-        aliceValue: 0.01,
-        autocloneMultiplier: 1,
-        clickBoostMax: 1,
-        hiringFairMax: 10,
-        internValue: 0.01,
-        misterEValue: 1e-5,
-        money: 1e12,
-        totalMoneySpent: 0,
-        firstPrestige: false,
-        endgameUpgradeCounter: 0
-    }
-    endgameRewards.forEach((reward) => {
-        reward.value = endgameRewardsInitialValues[reward.stateKey];
-        if(reward.name === `Double or Nothing`){
-            reward.available = false;
-        } else {
-            reward.available = true;
-        }
-    });
-    restartRun();
 }
 
 // Save and Load functions using JSON and localStorage
