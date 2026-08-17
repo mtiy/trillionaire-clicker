@@ -164,6 +164,11 @@ li {
     min-width: 35%;
 }
 
+.activate-button-activated {
+    background-color: var(--button-disabled-background);
+    color: var(--button-disabled-color);
+}
+
 .upgrade-text {
     display: flex;
     justify-content: space-between;
@@ -322,7 +327,7 @@ li {
 }
 
 @media (hover: hover){
-    button:hover:enabled {
+    button:hover {
         background-color: var(--button-background-hover);
         color: var(--button-hover-color);
     }

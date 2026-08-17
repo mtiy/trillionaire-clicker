@@ -130,7 +130,8 @@ let permanentState = {
     totalMoneySpent: 0,
     firstPrestige: false,
     endgameUpgradeCounter: 0,
-    darkMode: false
+    darkMode: false,
+    maxActiveEffects: 2
 }
 
 const endgameRewardsInitialValues = {
@@ -378,7 +379,8 @@ function initializeGame(){
         },
         killInterns: false,
         clickPercent: 0,
-        roundButtons: false
+        roundButtons: false,
+        activeEffects: 0
     };
 
     messages = [
@@ -415,6 +417,8 @@ function initializeGame(){
         misterE: new Person(0, "Mr E", permanentState.misterEValue, 50e6, null)
     };
 
+    activateButtonsStatus = [0,0,0,0];
+
     activateButtons = {
         clickUpgrade: {
             removeUpgrade(){
@@ -425,12 +429,20 @@ function initializeGame(){
             cost: 75,
             activated: false
         },
-        autoclone: {
+        autocloneBob: {
             removeUpgrade(){
                 autocloneObject.bobAmount = 0;
+                autocloneObject.autocloneBobActivated = false;
+                activateButtons.autocloneBob.activated = false;
+            },
+            cost: 20000,
+            activated: false
+        },
+        autocloneAlice: {
+            removeUpgrade(){
                 autocloneObject.aliceAmount = 0;
-                autocloneObject.autocloneActivated = false;
-                activateButtons.autoclone.activated = false;
+                autocloneObject.autocloneAliceActivated = false;
+                activateButtons.autocloneAlice.activated = false;
             },
             cost: 20000,
             activated: false
@@ -456,7 +468,8 @@ function initializeGame(){
 
     autocloneObject = {
         unlockedAutocloning: false,
-        autocloneActivated: false,
+        autocloneBobActivated: false,
+        autocloneAliceActivated: false,
         bobAmount: 0,
         aliceAmount: 0,
         multiplier: 1
@@ -631,8 +644,6 @@ function resetDisplay(){
 
     document.querySelector(".endgame-upgrades-text").textContent = ``;
     endgameUpgrades.hidden = true;
-
-    activateButtonsStatus = "";
 
     gameOverDisplay.hidden = true;
     gameOverDisplay.classList.remove("fade-in");
@@ -865,47 +876,87 @@ function updateState(dt){
 
     if(!state.unlocks.unlockedClickBoost && round(state.spentMoney) >= activateButtons.clickUpgrade.cost){
         let clickBoost = new ActivateButton("Boost Click Strength", "clickUpgrade", function() {
-            undoActivateEffects();
-            activateButtons.clickUpgrade.activated = true;
-            this.disabled = true;
-            activateButtonsStatus = this.id;
+            if(activateButtons.clickUpgrade.activated){
+                activateButtons.clickUpgrade.removeUpgrade();
+                this.classList.remove("activate-button-activated");
+                activateButtonsStatus[0] = 0;
+                this.textContent = "Activate";
+                state.activeEffects--;
+            } else {
+                if(state.activeEffects >= permanentState.maxActiveEffects){
+                    console.log(`Cannot have more than ${permanentState.maxActiveEffects} effects active at once`);
+                    return;
+                }
+                state.activeEffects++;
+                activateButtons.clickUpgrade.activated = true;
+                this.classList.add("activate-button-activated");
+                activateButtonsStatus[0] = 1;
+                this.textContent = "Deactivate";
+            }
         });
         clickDisplay.append(clickBoost.createButton("clickStrengthText"));
         state.unlocks.unlockedClickBoost = true;
         addMobileNotification(mobileEffectsButton);
-        if(activateButtonsStatus === "clickUpgrade"){
-            document.getElementById("clickUpgrade").disabled = true;
-            console.log("Disabled");
+        if(activateButtonsStatus[0]){
+            document.getElementById("clickUpgrade").classList.add("activate-button-activated");
+            document.getElementById("clickUpgrade").textContent = "Deactivate";
         }
     }
 
-    if(!autocloneObject.unlockedAutocloning && round(state.spentMoney) >= activateButtons.autoclone.cost){
+    if(!autocloneObject.unlockedAutocloning && round(state.spentMoney) >= activateButtons.autocloneBob.cost){
         autocloneObject.unlockedAutocloning = true;
 
-        let autoBob = new ActivateButton("Autoclone Bobs", "autoclone", function(){
-            undoActivateEffects();
-            autocloneObject.autocloneActivated = true;
-            activateButtons.autoclone.activated = true;
-            autocloneObject.bobAmount++;
-            this.disabled = true;
-            activateButtonsStatus = "bob";
+        let autoBob = new ActivateButton("Autoclone Bobs", "autocloneBob", function(){
+            if(activateButtons.autocloneBob.activated){
+                activateButtons.autocloneBob.removeUpgrade();
+                this.classList.remove("activate-button-activated");
+                activateButtonsStatus[1] = 0;
+                this.textContent = "Activate";
+                state.activeEffects--;
+            } else {
+                if(state.activeEffects >= permanentState.maxActiveEffects){
+                    console.log(`Cannot have more than ${permanentState.maxActiveEffects} effects active at once`);
+                    return;
+                }
+                state.activeEffects++;
+                activateButtons.autocloneBob.activated = true;
+                autocloneObject.autocloneBobActivated = true;
+                autocloneObject.bobAmount++;
+                this.classList.add("activate-button-activated");
+                activateButtonsStatus[1] = 1;
+                this.textContent = "Deactivate";
+            }
         });
-        let autoAlice = new ActivateButton("Autoclone Alices", "autoclone", function(){
-            undoActivateEffects();
-            autocloneObject.autocloneActivated = true;
-            activateButtons.autoclone.activated = true;
-            autocloneObject.aliceAmount++;
-            this.disabled = true;
-            activateButtonsStatus = "alice";
+        let autoAlice = new ActivateButton("Autoclone Alices", "autocloneAlice", function(){
+            if(activateButtons.autocloneAlice.activated){
+                activateButtons.autocloneAlice.removeUpgrade();
+                this.classList.remove("activate-button-activated");
+                activateButtonsStatus[2] = 0;
+                this.textContent = "Activate";
+                state.activeEffects--;
+            } else {
+                if(state.activeEffects >= permanentState.maxActiveEffects){
+                    console.log(`Cannot have more than ${permanentState.maxActiveEffects} effects active at once`);
+                    return;
+                }
+                state.activeEffects++;
+                activateButtons.autocloneAlice.activated = true;
+                autocloneObject.autocloneAliceActivated = true;
+                autocloneObject.aliceAmount++;
+                this.classList.add("activate-button-activated");
+                activateButtonsStatus[2] = 1;
+                this.textContent = "Deactivate";
+            }
         });
         clickDisplay.append(autoBob.createButton("autocloneBobText"), autoAlice.createButton("autocloneAliceText"));
         addMobileNotification(mobileEffectsButton);
-        let aButtons = document.querySelectorAll(".activate-button");
-        if(activateButtonsStatus === "bob"){
-            aButtons[1].disabled = true;
+        if(activateButtonsStatus[1]){
+            document.getElementById("autocloneBob").classList.add("activate-button-activated");
+            document.getElementById("autocloneBob").textContent = "Deactivate";
         }
-        if(activateButtonsStatus === "alice"){
-            aButtons[2].disabled = true;
+        if(activateButtonsStatus[2]){
+            document.getElementById("autocloneAlice").classList.add("activate-button-activated");
+            document.getElementById("autocloneAlice").textContent = "Deactivate";
         }
     }
 
@@ -919,17 +970,32 @@ function updateState(dt){
     if(!state.unlocks.hasHiringFair && round(state.spentMoney) >= activateButtons.hiring.cost){
         state.unlocks.hasHiringFair = true;
         let autoIntern = new ActivateButton("Job Fair", "hiring", function(){
-            undoActivateEffects();
-            document.getElementById("hiringFairText").textContent = `${hiringFair.amount} interns / s`;
-            hiringFair.activated = true;
-            activateButtons.hiring.activated = true;
-            this.disabled = true;
-            activateButtonsStatus = this.id;
+            if(activateButtons.hiring.activated){
+                activateButtons.hiring.removeUpgrade();
+                this.classList.remove("activate-button-activated");
+                activateButtonsStatus[3] = 0;
+                this.textContent = "Activate";
+                state.activeEffects--;
+            } else {
+                if(state.activeEffects >= permanentState.maxActiveEffects){
+                    console.log(`Cannot have more than ${permanentState.maxActiveEffects} effects active at once`);
+                    return;
+                }
+                state.activeEffects++;
+                document.getElementById("hiringFairText").textContent = `${hiringFair.amount} interns / s`;
+                activateButtons.hiring.activated = true;
+                hiringFair.activated = true;
+                autocloneObject.aliceAmount++;
+                this.classList.add("activate-button-activated");
+                activateButtonsStatus[3] = 1;
+                this.textContent = "Deactivate";
+            }
         });
         clickDisplay.append(autoIntern.createButton("hiringFairText"));
         addMobileNotification(mobileEffectsButton);
-        if(activateButtonsStatus === "hiring"){
-            document.getElementById("hiring").disabled = true;
+        if(activateButtonsStatus[3]){
+            document.getElementById("hiring").classList.add("activate-button-activated");
+            document.getElementById("hiring").textContent = "Deactivate";
         }
     }
 
@@ -995,7 +1061,7 @@ function updateState(dt){
         state.money = compoundInterest(state.money, 0.05, dt/1000/25);
     }
 
-    if(autocloneObject.autocloneActivated){
+    if(autocloneObject.autocloneBobActivated || autocloneObject.autocloneAliceActivated){
         autoclone(autocloneObject, dt);
     }
 
@@ -1078,13 +1144,16 @@ function boostClickPower(dt){
     }
 }
 
+
+
+// Take an array of strings corresponding to effects we want to disable
 function undoActivateEffects(){
     const buttons = document.querySelectorAll(".activate-button");
     for(i of buttons){
-        if(i.disabled){
+        if(i.classList.contains("activate-button-activated")){
             activateButtons[i.id].removeUpgrade();
-            i.disabled = false;
-        }   
+            i.classList.remove("activate-button-activated");
+        }
     }
 }
 
@@ -1233,7 +1302,7 @@ function devMode(){
     people.intern.cost = 0;
     people.misterE.cost = 0;
     activateButtons.clickUpgrade.cost = 0;
-    activateButtons.autoclone.cost = 0;
+    activateButtons.autocloneBob.cost = 0;
     activateButtons.hiring.cost = 0;
 }
 
