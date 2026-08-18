@@ -732,6 +732,14 @@ function restartRun(){
     startModal.showModal();
 }
 
+// For playtesting right now, fully resets game
+function mobileFullReset(){
+    localStorage.clear();
+    window.location.reload();
+}
+
+document.getElementById("mobile-full-reset").addEventListener("click", mobileFullReset);
+
 document.getElementById("restartNo").addEventListener("click", () => {
     restartConfirmModal.close();
 });
