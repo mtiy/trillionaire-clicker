@@ -1281,12 +1281,18 @@ setInterval(function gameLoop(){
     }
     const currentTime = performance.now();
     if(lastTime === null){
-        lastTime = performance.now();
+        lastTime = currentTime;
     }
     const deltaTime = currentTime - lastTime;
     totalTime += deltaTime;
     lastTime = currentTime;
     accumulatedLag += deltaTime;
+
+    if(deltaTime > 6e4){
+        state.paused = true;
+        lastTime = null;
+        calculateOfflineProgress(deltaTime/1000);
+    }
 
     while(accumulatedLag >= timeStep){
         accumulatedLag -= timeStep;
@@ -1332,6 +1338,7 @@ function saveGame(){
     }
 
     localStorage.setItem("trillionaireClickerSave", JSON.stringify(save));
+    localStorage.setItem("trillionaireClickerTime", Date.now());
 }
 
 function loadGame(){
@@ -1386,8 +1393,23 @@ window.onload = (event) => {
     }
 }
 
-// Offline Progress: (inspired by Antimatter Dimensions)
+// Offline Progress: (ripping off Antimatter Dimensions)
 // Using a min tick length of 50ms, up to a maximum of 1000 ticks, to simulate offline progress
-function calculateOfflineProgress(milliseconds){
-    let ticks = 0;
+function calculateOfflineProgress(seconds){
+    if(seconds < 0) return;
+    const maxTicks = 1000;
+    let ticks = Math.floor(seconds*20);
+    if(ticks > maxTicks){
+        ticks = maxTicks;
+    }
+
+    // Loop our update function passing in the tick increments
+    // For small times this will be equal to just playing in real time, for large ones
+    // It will be less accurate as our ticks could be multiple second deltas
+    let delta = seconds/ticks;
+    for(i = 0; i < ticks; i++){
+        updateState(delta*1000);
+    }
+    console.log("Offline progress finished calculating");
+    state.paused = false;
 }
