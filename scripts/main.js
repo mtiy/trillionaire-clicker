@@ -985,7 +985,6 @@ function updateState(dt){
                 document.getElementById("hiringFairText").textContent = `${hiringFair.amount} interns / s`;
                 activateButtons.hiring.activated = true;
                 hiringFair.activated = true;
-                autocloneObject.aliceAmount++;
                 this.classList.add("activate-button-activated");
                 activateButtonsStatus[3] = 1;
                 this.textContent = "Deactivate";
@@ -1272,7 +1271,7 @@ function endGame(){
 
 // Game Loop
 let lastTime = null;
-let timeStep = 25;
+let timeStep = 50;
 let accumulatedLag = 0;
 let totalTime = 0;
 let lastSave = 0;
@@ -1385,4 +1384,10 @@ window.onload = (event) => {
         startModal.showModal();
         initializeGame();
     }
+}
+
+// Offline Progress: (inspired by Antimatter Dimensions)
+// Using a min tick length of 50ms, up to a maximum of 1000 ticks, to simulate offline progress
+function calculateOfflineProgress(milliseconds){
+    let ticks = 0;
 }
