@@ -131,7 +131,7 @@ let permanentState = {
     firstPrestige: false,
     endgameUpgradeCounter: 0,
     darkMode: false,
-    maxActiveEffects: 2
+    maxActiveEffects: 1
 }
 
 const endgameRewardsInitialValues = {
