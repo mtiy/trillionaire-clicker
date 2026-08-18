@@ -1065,7 +1065,6 @@ function updateState(dt){
     }
 
     if(hiringFair.activated){
-        hiringFair.timer += dt;
         hireInterns(dt);
     }
 
@@ -1120,8 +1119,13 @@ function autoclone(ac, dt){
 }
 
 function hireInterns(dt){
-    if(hiringFair.amount < permanentState.hiringFairMax && hiringFair.timer % 6e3 === 0){
+    hiringFair.timer += dt;
+    if(hiringFair.amount >= permanentState.hiringFairMax){
+        document.getElementById("hiringFairText").textContent = `${hiringFair.amount} interns / s - max`;
+    }
+    if(hiringFair.amount < permanentState.hiringFairMax && (hiringFair.timer >= 6000)){
         hiringFair.amount += permanentState.hiringFairMax/10;
+        hiringFair.timer = 0;
         if(hiringFair.amount >= permanentState.hiringFairMax){
             hiringFair.amount = permanentState.hiringFairMax;
             document.getElementById("hiringFairText").textContent = `${hiringFair.amount} interns / s - max`;
@@ -1288,6 +1292,7 @@ setInterval(function gameLoop(){
     lastTime = currentTime;
     accumulatedLag += deltaTime;
 
+    // If loop has been paused for a minute, switch to different calculation method
     if(deltaTime > 6e4){
         state.paused = true;
         lastTime = null;
