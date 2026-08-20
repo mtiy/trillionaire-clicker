@@ -35,6 +35,7 @@ const hardModeModal = document.getElementById("hardModeStartScreen");
 const restartConfirmModal = document.getElementById("restartConfirm");
 const eventModal = document.getElementById("eventModal");
 const root = document.querySelector(":root");
+const importModal = document.getElementById("importModal");
 
 // Mobile buttons, remove notification effect on click
 const mobileButtons = document.querySelectorAll(".mobile-button");
@@ -647,7 +648,7 @@ function restartRun(){
 
 // For playtesting right now, fully resets game
 function mobileFullReset(){
-    localStorage.clear();
+    localStorage.removeItem("trillionaireClickerSave");
     window.location.reload();
 }
 
@@ -1240,7 +1241,7 @@ function devMode(){
 
 // Save and Load functions using JSON and localStorage
 function saveGame(){
-    localStorage.clear();
+    localStorage.removeItem("trillionaireClickerSave");
 
     let save = {
         state: state,
@@ -1254,13 +1255,11 @@ function saveGame(){
     }
 
     localStorage.setItem("trillionaireClickerSave", JSON.stringify(save));
-    localStorage.setItem("trillionaireClickerTime", Date.now());
 }
 
-function loadGame(){
+function loadGame(save){
     initializeGame();
     resetDisplay();
-    let save = JSON.parse(localStorage.getItem("trillionaireClickerSave"));
 
     state = save.state;
     messages = save.messages;
@@ -1292,17 +1291,50 @@ function loadGame(){
         permanentState.darkMode = false;
         toggleDarkMode();
     }
+
+    console.log("Game Loaded");
 }
 
 // Loads in the game state 
 window.onload = (event) => {
     if(localStorage.getItem("trillionaireClickerSave") != null){
-        loadGame();
+        loadGame(JSON.parse(localStorage.getItem("trillionaireClickerSave")));
     } else {
         startModal.showModal();
         initializeGame();
     }
 }
+
+// Import and export saves
+const importButton = document.getElementById("importSave");
+const exportButton = document.getElementById("exportSave");
+
+function exportSave(){
+    let save = localStorage.getItem("trillionaireClickerSave");
+    document.getElementById("saveInput").value = save;
+}
+
+function importSave(){
+    try{
+        let save = JSON.parse(document.getElementById("saveInput").value);
+        loadGame(save);
+    } catch (error){
+        document.getElementById("saveInput").value = error;
+    }
+
+}
+
+exportButton.addEventListener("click", exportSave);
+importButton.addEventListener("click", importSave);
+document.getElementById("closeInputModal").addEventListener("click", () => {
+    importModal.close();
+});
+document.getElementById("importExport").addEventListener("click", () => {
+    importModal.showModal();
+});
+document.getElementById("mobile-import-export").addEventListener("click", () => {
+    importModal.showModal();
+});
 
 // Offline Progress: (ripping off Antimatter Dimensions)
 // Using a min tick length of 50ms, up to a maximum of 1000 ticks, to simulate offline progress

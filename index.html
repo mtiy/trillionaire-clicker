@@ -12,6 +12,7 @@
         <div class="desktop-options-buttons">
             <button id="darkMode" class="options-button">Dark Mode</button>
             <button id="reset" class="options-button">Restart</button>
+            <button id="importExport" class="options-button">Import/Export</button>
         </div>
     </div>
     <menu class="mobile-tabs">
@@ -42,6 +43,7 @@
             <button id="mobile-dark-mode" class="mobile-options-button">Dark Mode</button>
             <button id="mobile-reset" class="mobile-options-button">Restart</button>
             <button id="mobile-full-reset" class="mobile-options-button">Full Reset</button>
+            <button id="mobile-import-export" class="mobile-options-button">Import/Export</button>
         </div>
     </div>
     <dialog id="startScreen" class="modal-popup">
@@ -63,5 +65,14 @@
         <button id="restartNo" class="modal-button">I clicked that on accident. I'm scared. Get me out of here.</button>
     </dialog>
     <dialog id="eventModal" class="modal-popup"></dialog>
+    <dialog id="importModal" class="modal-popup">
+        <div>Paste your save and press import, or press export and copy your save for later.</div>
+        <input type="text" id="saveInput" size="30">
+        <div>
+            <button id="importSave" class="modal-button">Import</button>
+            <button id="exportSave" class="modal-button">Export</button>
+            <button id="closeInputModal" class="modal-button">Close</button>
+        </div>
+    </dialog>
 </body>
 </html>
