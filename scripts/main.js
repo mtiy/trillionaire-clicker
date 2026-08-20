@@ -1178,6 +1178,7 @@ function compoundInterest(p, r, t){
 }
 
 function manualSpend(){
+    if(state.paused) state.paused = false;
     state.money -= (state.clickStrength + state.money*state.clickPercent);
     state.spentMoney += (state.clickStrength + state.money*state.clickPercent);
     updateDisplay();
