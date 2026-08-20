@@ -214,8 +214,15 @@ li {
     color: black;
 }
 
-.endgame-increase-money-button:hover {
-    background-color: rgb(207, 177, 4);
+.endgame-hard-mode-reward {
+    background-color: #880303;
+    color: rgb(202, 189, 189);
+}
+
+.endgame-coin-button {
+    background-color: rgb(1, 65, 1);
+    color: rgb(221, 203, 42);
+    border-radius: 5em;
 }
 
 .thought-text {
@@ -258,10 +265,6 @@ li {
     margin-right:auto;
 }
 
-.permanent-upgrade-text {
-    font-weight: bold;
-}
-
 .end-game-button {
     padding: 10px;
     font-size: 1.2rem;
@@ -273,7 +276,8 @@ li {
 .endgame-modal-button {
     font-size: 1em;
     padding: 0.5em;
-    margin: 1em 2em 0 1em;
+    margin: 1em 0 0 0;
+    width: 100%;
 }
 
 .button-container {

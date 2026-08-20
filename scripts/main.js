@@ -142,8 +142,10 @@ const upgrades = {
             available: true,
             increase: 0.99,
             buttonText: `Click Strength`,
+            displayText: `Click Strength is the value you get per click. It determines how much you spend, clone, and hire.`,
             createText(){
-                return `Click Strength is the value you get per click. It determines how much you spend, clone, and hire.`;
+                let t = createUpgradeText(this.displayText, `Current: ${permanentState.baseClickStrength}`, `Upgraded: ${permanentState.baseClickStrength + this.increase}`);
+                return t;
             },
             applyEffect(){
                 permanentState.baseClickStrength += this.increase;
@@ -154,30 +156,34 @@ const upgrades = {
             available: true,
             increase: 0.09,
             buttonText: `Bob Spending`,
+            displayText: `Bob Spending is how much each Bob spends per second.`,
             createText(){
-                return `Bob Spending is how much each Bob clone spends.`;
+                let t = createUpgradeText(this.displayText, `Current: ${permanentState.bobValue.toFixed(2)}`, `Upgraded: ${(permanentState.bobValue + this.increase).toFixed(2)}`);
+                return t;
             },
             applyEffect(){
                 permanentState.bobValue += this.increase;
                 this.available = false;
             }
         },
-        internUpgrade: {
+        autoclonerProduction: {
             available: true,
-            increase: 0.09,
-            buttonText: `Intern Multiplier`,
+            increase: 9,
+            buttonText: `Autocloner Production`,
+            displayText: `Autocloner Production is how many clones the autocloner creates per second.`,
             createText(){
-                return `Intern Multiplier is how much each intern boosts autocloner efficiency.`;
+                let t = createUpgradeText(this.displayText, `Current: ${permanentState.autocloneMultiplier}`, `Upgraded: ${permanentState.autocloneMultiplier + 9}`);
+                return t;
             },
             applyEffect(){
-                permanentState.internValue += this.increase;
+                permanentState.autocloneMultiplier += this.increase;
                 this.available = false;
             }
         },
         hardModeReward: {
-            available: true,
+            available: false,
             increase: 0.02,
-            buttonText: `Something Special`,
+            buttonText: `Hard Mode Reward`,
             createText(){
                 return `Slight increase to all stats.`;
             },
@@ -188,6 +194,18 @@ const upgrades = {
                 permanentState.autocloneMultiplier++;
 
             }
+        },
+        flipCoin: {
+            available: true,
+            increase: 0,
+            buttonText: `A Stranger`,
+            displayText: `A strange man approaches you. He holds out a coin. "Call it," he says.`,
+            createText(){
+                let t = document.createElement("p");
+                t.textContent = this.displayText;
+                return t;
+            },
+            applyEffect(){console.log("Flipping Coin...")}
         },
         increaseMoney: {
             available: true,
@@ -201,8 +219,8 @@ const upgrades = {
                 this.available = false;
                 upgrades.tierLevel = `tier2`;
             }
-        } // Consider the case of player resetting because new money tier was too hard, completing game again, needs a reward that is made avail. on reset
-    }, // Or available on any completion that isn't hard mode
+        }
+    },
     tier2: {},
     tier3: {},
     tierLevel: `tier1`
@@ -223,7 +241,7 @@ function handleEndgameRewards(){
     // Loop through the tier, create the elements we need and append to the upgrade area
     for(u in tier){
         if(tier[u].available){
-            let upgradeBtn = createUpgrade(tier[u]);
+            let upgradeBtn = createUpgrade(tier[u], u);
             endgameUpgradesButtons.append(upgradeBtn);
         }
     }
@@ -232,33 +250,62 @@ function handleEndgameRewards(){
     endgameUpgrades.hidden = false;
 }
 
-function createUpgrade(upgradeObj){
-    // Cancel and okay go in the popup, upgrade on click displays the popup
-    let cancelBtn = createButton(`Nevermind`, `endgame-modal-button`);
-    let okayBtn = createButton(`Okay`, `endgame-modal-button`);
+function createUpgrade(upgradeObj, key){
+    // Create our buttons
+    [cancelButton, chooseButton, headsButton, tailsButton] = createUpgradeButtons();
     let upgradeBtn = createButton(upgradeObj.buttonText, `endgame-upgrades-button`);
+    let div = document.createElement("div");
 
     // Text is displayed in the popup
     let text = upgradeObj.createText();
+    div.append(text);
+    div.append(document.createElement("br"));
 
-    cancelBtn.addEventListener("click", () => {
-        eventModal.close();
-    });
+    cancelButton.addEventListener("click", () => {eventModal.close()});
 
-    okayBtn.addEventListener("click", function(){
-        upgradeObj.applyEffect();
-        eventModal.close();
-        endgameUpgrades.hidden = true;
-        endGame();
-    });
+    if(key === `flipCoin`){
+        headsButton.addEventListener("click", function(){upgradeObj.applyEffect()});
+        tailsButton.addEventListener("click", function(){upgradeObj.applyEffect()});
+        div.append(headsButton, tailsButton);
+        upgradeBtn.classList.add("endgame-coin-button");
+    } else {
+        chooseButton.addEventListener("click", function(){
+            upgradeObj.applyEffect();
+            eventModal.close();
+            endgameUpgrades.hidden = true;
+            endGame();
+        });
+        div.append(chooseButton);
+    }
+
+    // Add some special styling for certain upgrades
+    if(key === `increaseMoney`){
+        upgradeBtn.classList.add("endgame-increase-money-button");
+    }
+
+    if(key === `hardModeReward`){
+        upgradeBtn.classList.add("endgame-hard-mode-reward");
+    }
+
+    div.append(cancelButton);
 
     upgradeBtn.addEventListener("click", function(){
         eventModal.textContent = ``;
-        eventModal.append(text, document.createElement("br"), okayBtn, cancelBtn);
+        eventModal.append(div);
         eventModal.showModal();
     });
 
     return upgradeBtn;
+}
+
+function createUpgradeButtons(){
+    let cancelButton = createButton("Go Back", "endgame-modal-button");
+    let chooseButton = createButton("Choose", "endgame-modal-button");
+    let headsButton = createButton("Heads", "endgame-modal-button");
+    let tailsButton = createButton("Tails", "endgame-modal-button");
+
+    
+    return [cancelButton, chooseButton, headsButton, tailsButton];
 }
 
 function createButton(text, style){
@@ -266,6 +313,19 @@ function createButton(text, style){
     b.textContent = text;
     b.classList.add(style);
     return b;
+}
+
+// Text that is displayed when you click an endgame upgrade
+function createUpgradeText(main, current, upgraded){
+    let text = document.createElement("div");
+    let mainText = document.createElement("p");
+    mainText.textContent = main;
+    let upgradeText = document.createElement("p");
+    let c = document.createTextNode(current);
+    let u = document.createTextNode(upgraded);
+    upgradeText.append(current, document.createElement("br"), upgraded);
+    text.append(mainText, upgradeText);
+    return text;
 }
 
 // Initialize all states and conditions for the purpose of starting a new game
@@ -1199,7 +1259,6 @@ setInterval(function gameLoop(){
         lastTime = currentTime;
     }
     const deltaTime = currentTime - lastTime;
-    console.log(deltaTime/1000);
     totalTime += deltaTime;
     lastTime = currentTime;
     accumulatedLag += deltaTime;
