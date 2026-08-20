@@ -1069,19 +1069,6 @@ function boostClickPower(dt){
     }
 }
 
-
-
-// Take an array of strings corresponding to effects we want to disable
-function undoActivateEffects(){
-    const buttons = document.querySelectorAll(".activate-button");
-    for(i of buttons){
-        if(i.classList.contains("activate-button-activated")){
-            activateButtons[i.id].removeUpgrade();
-            i.classList.remove("activate-button-activated");
-        }
-    }
-}
-
 function round(s){
     return Math.round(s*100)/100;
 }
@@ -1091,6 +1078,7 @@ function compoundInterest(p, r, t){
     return p*Math.E**(r*t);
 }
 
+// Happens when you click the big spend button
 function manualSpend(){
     if(state.paused) state.paused = false;
     state.money -= (state.clickStrength + state.money*state.clickPercent);
@@ -1206,11 +1194,12 @@ setInterval(function gameLoop(){
     if(state.paused){
         return;
     }
-    const currentTime = performance.now();
+    const currentTime = Date.now();
     if(lastTime === null){
         lastTime = currentTime;
     }
     const deltaTime = currentTime - lastTime;
+    console.log(deltaTime/1000);
     totalTime += deltaTime;
     lastTime = currentTime;
     accumulatedLag += deltaTime;
@@ -1219,12 +1208,13 @@ setInterval(function gameLoop(){
     if(deltaTime > 6e4){
         state.paused = true;
         lastTime = null;
+        accumulatedLag = 0;
         calculateOfflineProgress(deltaTime/1000);
-    }
-
-    while(accumulatedLag >= timeStep){
-        accumulatedLag -= timeStep;
-        updateState(timeStep);
+    } else {
+        while(accumulatedLag >= timeStep){
+            accumulatedLag -= timeStep;
+            updateState(timeStep);
+        }
     }
 },timeStep);
 
