@@ -134,223 +134,137 @@ let permanentState = {
     maxActiveEffects: 1
 }
 
-const endgameRewardsInitialValues = {
-    baseClickStrength: 0.5,
-    bobValue: 2,
-    aliceValue: 2,
-    internValue: 2,
-    clickBoostMax: 1,
-    hiringFairMax: 5,
-    autocloneMultiplier: 1,
-    money: 1000,
-    increaseUpgrades: 2
+// New object, goal is to hold all our upgrade tiers and relevant info
+const upgrades = {
+    tier1: {
+        clickStrength: {
+            available: true,
+            increase: 0.99,
+            buttonText: `Click Strength`,
+            createText(){
+                return `Click Strength is the value you get per click. It determines how much you spend, clone, and hire.`;
+            },
+            applyEffect(){
+                permanentState.baseClickStrength += this.increase;
+                this.available = false;
+            }
+        },
+        bobUpgrade: {
+            available: true,
+            increase: 0.09,
+            buttonText: `Bob Spending`,
+            createText(){
+                return `Bob Spending is how much each Bob clone spends.`;
+            },
+            applyEffect(){
+                permanentState.bobValue += this.increase;
+                this.available = false;
+            }
+        },
+        internUpgrade: {
+            available: true,
+            increase: 0.09,
+            buttonText: `Intern Multiplier`,
+            createText(){
+                return `Intern Multiplier is how much each intern boosts autocloner efficiency.`;
+            },
+            applyEffect(){
+                permanentState.internValue += this.increase;
+                this.available = false;
+            }
+        },
+        hardModeReward: {
+            available: true,
+            increase: 0.02,
+            buttonText: `Something Special`,
+            createText(){
+                return `Slight increase to all stats.`;
+            },
+            applyEffect(){
+                permanentState.baseClickStrength += this.increase;
+                permanentState.bobValue += this.increase;
+                permanentState.aliceValue += this.increase;
+                permanentState.autocloneMultiplier++;
+
+            }
+        },
+        increaseMoney: {
+            available: true,
+            increase: 1e3,
+            buttonText: `Increase Money`,
+            createText(){
+                return `Increases starting money.`;
+            },
+            applyEffect(){
+                permanentState.money *= 1000;
+                this.available = false;
+                upgrades.tierLevel = `tier2`;
+            }
+        } // Consider the case of player resetting because new money tier was too hard, completing game again, needs a reward that is made avail. on reset
+    }, // Or available on any completion that isn't hard mode
+    tier2: {},
+    tier3: {},
+    tierLevel: `tier1`
 }
 
-let endgameRewards = [
-    {
-        name: `Click Strength`,
-        text: `Increase your Click Strength`,
-        available: true,
-        value: 0.99,
-        stateKey: `baseClickStrength`,
-        getUpgrade(original){
-            return original + this.value;
-        },
-        applyUpgrade(){
-            permanentState.baseClickStrength = this.getUpgrade(permanentState.baseClickStrength);
-            this.available = false;
-            permanentState.endgameUpgradeCounter++;
-        }
-    },
-    {
-        name: `Bob Spending`,
-        text: `Increase spending per Bob`,
-        available: true,
-        value: 10,
-        stateKey: `bobValue`,
-        getUpgrade(original){
-            return original * this.value;
-        },
-        applyUpgrade(){
-            permanentState.bobValue = this.getUpgrade(permanentState.bobValue);
-            this.available = false;
-            permanentState.endgameUpgradeCounter++;
-        }
-    },
-    {
-        name: `Alice Multiplier`,
-        text: `Increase Alice Multiplier`,
-        available: true,
-        value: 2,
-        stateKey: `aliceValue`,
-        getUpgrade(original){
-            return original * this.value;
-        },
-        applyUpgrade(){
-            permanentState.aliceValue = this.getUpgrade(permanentState.aliceValue);
-            this.available = false;
-            permanentState.endgameUpgradeCounter++;
-        }
-    },
-    {
-        name: `Intern Multiplier`,
-        text: `Increase Intern Multiplier`,
-        available: true,
-        value: 10,
-        stateKey: `internValue`,
-        getUpgrade(original){
-            return original * this.value;
-        },
-        applyUpgrade(){
-            permanentState.internValue = this.getUpgrade(permanentState.internValue);
-            this.available = false;
-            permanentState.endgameUpgradeCounter++;
-        }
-    },
-    {
-        name: `Click Boost Maximum`,
-        text: `Raise Click Boost Maximum`,
-        available: true,
-        value: 1,
-        stateKey: `clickBoostMax`,
-        getUpgrade(original){
-            return original + this. value;
-        },
-        applyUpgrade(){
-            permanentState.clickBoostMax = this.getUpgrade(permanentState.clickBoostMax);
-            this.available = false;
-            permanentState.endgameUpgradeCounter++;
-        }
-    },
-    {
-        name: `Hiring Fair Maximum`,
-        text: `Raise Hiring Fair Maximum`,
-        available: true,
-        value: 5,
-        stateKey: `hiringFairMax`,
-        getUpgrade(original){
-            return original + this.value;
-        },
-        applyUpgrade(){
-            permanentState.hiringFairMax = this.getUpgrade(permanentState.hiringFairMax);
-            this.available = false;
-            permanentState.endgameUpgradeCounter++;
-        }
-    },
-    {
-        name: `Autocloner Production`,
-        text: `Increase Autocloner Production`,
-        available: true,
-        value: 1,
-        stateKey: `autocloneMultiplier`,
-        getUpgrade(original){
-            return original + this.value;
-        },
-        applyUpgrade(){
-            permanentState.autocloneMultiplier = this.getUpgrade(permanentState.autocloneMultiplier);
-            this.available = false;
-            permanentState.endgameUpgradeCounter++;
-        }
-    },
-    {
-        name: `Double or Nothing`,
-        text: ``,
-        available: false,
-        value: 2,
-        stateKey: `increaseUpgrades`,
-        getUpgrade(original){
-            return original * this.value;
-        },
-        applyUpgrade(){
-            endgameRewards.forEach((r) => {
-                if(!r.available){
-                    r.available = true;
-                    r.value *= this.value;
-                }
-            });
-            this.value += 2;
-            this.available = false;
-            permanentState.misterEValue *= 2;
-            permanentState.endgameUpgradeCounter = 0;
-        }
-    },
-    {
-        name: `Increase Starting Money`,
-        text: `Going up...`,
-        extraText: `Note: Pressing reset during a run will reset your starting money back to 1 trillion`,
-        available: true,
-        value: 1000,
-        stateKey: `money`,
-        getUpgrade(original){
-            return original * this.value;
-        },
-        applyUpgrade(){
-            permanentState.money = this.getUpgrade(permanentState.money);
-        }
-    }
-];
-
-// Creating endgame permanent upgrade options
-function endgameUpgradeScreen(){
-    document.querySelector(".endgame-upgrades-text").textContent = `Choose a permanent upgrade`;
-    let cancelButton = document.createElement("button");
-    cancelButton.textContent = `Nevermind`;
-    cancelButton.classList.add("endgame-modal-button");
-    cancelButton.addEventListener("click", () => {
-        eventModal.close();
-    });
-
-    if(permanentState.endgameUpgradeCounter === 7){
-        endgameRewards[7].available = true;
-    }
-
+function handleEndgameRewards(){
     // Clear out the buttons if there are any
     while(endgameUpgradesButtons.firstChild){
         endgameUpgradesButtons.removeChild(endgameUpgradesButtons.firstChild);
     }
 
-    // Loop over our endgame rewards and create a button that opens a yes/no modal
-    endgameRewards.forEach((reward) => {
-        if(reward.available){
-            let b = document.createElement("button");
-            let b2 = document.createElement("button");
-            let topText = document.createElement("div");
-            let upgradeText = document.createElement("div");
-            topText.textContent = reward.text;
+    // Create our top text
+    document.querySelector(".endgame-upgrades-text").textContent = `Choose a permanent upgrade`;
 
-            if(reward.stateKey === `money`){
-                upgradeText.textContent = formatMoney(permanentState[reward.stateKey], 1e12) + " to " + formatMoney(reward.getUpgrade(permanentState[reward.stateKey]), 1e12);
-                upgradeText.append(document.createElement("br"),document.createTextNode(reward.extraText));
-                b.classList.add("endgame-increase-money-button");
-            } else if(reward.name === `Double or Nothing`){
-                topText.textContent = `All permanent upgrades get multiplied by ${reward.value}, and will become available again. Mr E sacrifices are twice as effective. This upgrade's value increases by 2`;
-            } else {
-                upgradeText.textContent = permanentState[reward.stateKey] + " to " + reward.getUpgrade(permanentState[reward.stateKey]);
-            }
+    // Start by navigating to the object based on current tier
+    let tier = upgrades[upgrades.tierLevel];
 
-            b.textContent = reward.name;
-            b.classList.add("endgame-upgrades-button");
-
-            b2.textContent = `Okay`;
-            b2.classList.add("endgame-modal-button");
-            b2.addEventListener("click", () => {
-                reward.applyUpgrade();
-                eventModal.close();
-                endgameUpgrades.hidden = true;
-                endGame();
-            });
-
-            b.addEventListener("click", function(){
-                eventModal.textContent = ``;
-                eventModal.append(topText, document.createElement("br"), upgradeText, b2, cancelButton);
-                eventModal.showModal();
-            });
-
-            endgameUpgradesButtons.append(b);
+    // Loop through the tier, create the elements we need and append to the upgrade area
+    for(u in tier){
+        if(tier[u].available){
+            let upgradeBtn = createUpgrade(tier[u]);
+            endgameUpgradesButtons.append(upgradeBtn);
         }
+    }
+
+    // Show our rewards
+    endgameUpgrades.hidden = false;
+}
+
+function createUpgrade(upgradeObj){
+    // Cancel and okay go in the popup, upgrade on click displays the popup
+    let cancelBtn = createButton(`Nevermind`, `endgame-modal-button`);
+    let okayBtn = createButton(`Okay`, `endgame-modal-button`);
+    let upgradeBtn = createButton(upgradeObj.buttonText, `endgame-upgrades-button`);
+
+    // Text is displayed in the popup
+    let text = upgradeObj.createText();
+
+    cancelBtn.addEventListener("click", () => {
+        eventModal.close();
     });
 
-    endgameUpgrades.hidden = false;
+    okayBtn.addEventListener("click", function(){
+        upgradeObj.applyEffect();
+        eventModal.close();
+        endgameUpgrades.hidden = true;
+        endGame();
+    });
+
+    upgradeBtn.addEventListener("click", function(){
+        eventModal.textContent = ``;
+        eventModal.append(text, document.createElement("br"), okayBtn, cancelBtn);
+        eventModal.showModal();
+    });
+
+    return upgradeBtn;
+}
+
+function createButton(text, style){
+    let b = document.createElement("button");
+    b.textContent = text;
+    b.classList.add(style);
+    return b;
 }
 
 // Initialize all states and conditions for the purpose of starting a new game
@@ -725,7 +639,6 @@ document.getElementById("restartYes").addEventListener("click", () => {
 // Resets state and display but does not change permanent state (besides starting money reset)
 function restartRun(){
     permanentState.money = 1e12;
-    endgameRewards[8].value = 1000;
     initializeGame();
     resetDisplay();
     saveGame();
@@ -1053,7 +966,7 @@ function updateState(dt){
             moneyDisplay.classList.add("shrink-out");
             setTimeout(() => {
                 hideScreen([peopleDisplay, clickDisplay, messageLog, moneyButton, moneyContainer], `display`);
-                endgameUpgradeScreen();
+                handleEndgameRewards();
                 console.log("Ending game");
             },5000);
             this.removeEventListener("click", lastClick);
@@ -1328,23 +1241,12 @@ function devMode(){
 function saveGame(){
     localStorage.clear();
 
-    // Save the endgame rewards state
-    let endgameRewardsValues = [];
-    endgameRewards.forEach((reward) => {
-        let data = {
-            value: reward.value,
-            available: reward.available
-        };
-        endgameRewardsValues.push(data);
-    });
-
     let save = {
         state: state,
         messages: messages,
         people: people,
         activateButtons: activateButtons,
         permanentState: permanentState,
-        endgameRewardsValues: endgameRewardsValues,
         autocloneObject: autocloneObject,
         hiringFair: hiringFair,
         activateButtonsStatus: activateButtonsStatus
@@ -1383,11 +1285,6 @@ function loadGame(){
 
     for(i in state.unlocks){
         state.unlocks[i] = false;
-    }
-
-    for(i=0; i<endgameRewards.length; i++){
-        endgameRewards[i].value = save.endgameRewardsValues[i].value;
-        endgameRewards[i].available = save.endgameRewardsValues[i].available;
     }
 
     if(permanentState.darkMode){
