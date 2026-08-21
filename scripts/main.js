@@ -10,9 +10,9 @@ let activateButtonsStatus;
 
 // Used for formatting our money
 const numberFormat1 = new Intl.NumberFormat("en-US", {style: "currency", currency: "USD"});
-const numberFormat2 = new Intl.NumberFormat("en-US", {notation: "scientific", minimumFractionDigits: "4"});
+const numberFormat2 = new Intl.NumberFormat("en-US", {notation: "scientific", minimumFractionDigits: "8"});
 const numberFormat3 = new Intl.NumberFormat("en-US", {maximumFractionDigits:"0"});
-const numberFormat4 = new Intl.NumberFormat("en-US", {notation: "scientific", maximumFractionDigits: "2"});
+const numberFormat4 = new Intl.NumberFormat("en-US", {notation: "scientific"});
 
 const moneyDisplay = document.querySelector(".money-display");
 const moneyButton = document.querySelector(".money-button");
@@ -217,18 +217,16 @@ const upgrades = {
             }
         },
         hardModeReward: {
-            available: false,
-            increase: 0.02,
+            available: true,
+            increase: 2,
             buttonText: `Hard Mode Reward`,
+            displayText: `Mr. E is impressed. Not everyone has what it takes to do the hard thing. But someone has to do it.`,
             createText(){
-                return `Slight increase to all stats.`;
+                let t = createUpgradeText(this.displayText, `Sacrifices to Mr. E are twice as effective`, ``);
+                return t;
             },
             applyEffect(){
-                permanentState.baseClickStrength += this.increase;
-                permanentState.bobValue += this.increase;
-                permanentState.aliceValue += this.increase;
-                permanentState.autocloneMultiplier++;
-
+                permanentState.misterEValue *= 2;
             }
         },
         flipCoin: {
@@ -244,11 +242,7 @@ const upgrades = {
             applyEffect(choice){
                 let result = coin.flip();
                 if(result === choice){
-                    permanentState.baseClickStrength += 0.02;
-                    permanentState.bobValue += 0.02;
-                    permanentState.aliceValue += 0.02;
-                    permanentState.internValue += 0.02;
-                    permanentState.autocloneMultiplier += 1;
+                    
                 }
                 coin.animate();
                 setTimeout(() => {
@@ -260,8 +254,10 @@ const upgrades = {
             available: true,
             increase: 1e3,
             buttonText: `Increase Money`,
+            displayText: `Increase your starting money. Note: "1E12" means 1 times 10 to the power of 12. Which is 1 trillion!`,
             createText(){
-                return `Increases starting money.`;
+                let t = createUpgradeText(this.displayText, `Current: ${numberFormat4.format(permanentState.money)}`, `Upgraded: ${numberFormat4.format(permanentState.money*1000)}`);
+                return t;
             },
             applyEffect(){
                 permanentState.money *= 1000;
@@ -365,7 +361,8 @@ function createButton(text, style){
 }
 
 // Text that is displayed when you click an endgame upgrade
-function createUpgradeText(main, current, upgraded){
+// main, current, upgraded are strings, repeatable is true/false
+function createUpgradeText(main, current, upgraded, repeatable){
     let text = document.createElement("div");
     let mainText = document.createElement("p");
     mainText.textContent = main;
@@ -498,7 +495,7 @@ function initializeGame(){
         autocloneAliceActivated: false,
         bobAmount: 0,
         aliceAmount: 0,
-        multiplier: 1
+        multiplier: permanentState.autocloneMultiplier
     };
 
     firstRandomEvents = [
