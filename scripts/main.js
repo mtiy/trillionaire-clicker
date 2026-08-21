@@ -133,7 +133,43 @@ let permanentState = {
     endgameUpgradeCounter: 0,
     darkMode: false,
     maxActiveEffects: 1
-}
+};
+
+let coin = {
+    array: [`heads`, `heads`, `tails`, `heads`, `tails`],
+    position: 0,
+    flip(){
+        let result = this.array[this.position];
+        this.position++;
+        if(this.position > this.array.length) this.position = 0;
+        return result;
+    },
+    animate(){
+        eventModal.textContent = ``;
+        let coinDisplay = document.createElement("div");
+        coinDisplay.classList.add("coin");
+        coinDisplay.textContent = `—`;
+        eventModal.append(coinDisplay);
+        coinDisplay.classList.add("flipping");
+    },
+    createResultText(matches){
+        let b = createButton(`Continue`, `endgame-modal-button`);
+        let t;
+        eventModal.textContent = ``;
+        b.addEventListener("click", () => {
+            eventModal.close();
+            endgameUpgrades.hidden = true;
+            endGame();
+        });
+        if(matches){
+            t = createUpgradeText(`Your guess is correct! The stranger smiles at you. You feel lucky. Or do you?`, `All stats increased slightly`, ``);
+
+        } else {
+            t = createUpgradeText(`Your guess is wrong! The stranger shakes his head. Better luck next time.`, ``, ``);
+        }
+        eventModal.append(t, b);
+    }
+};
 
 // New object, goal is to hold all our upgrade tiers and relevant info
 const upgrades = {
@@ -205,7 +241,20 @@ const upgrades = {
                 t.textContent = this.displayText;
                 return t;
             },
-            applyEffect(){console.log("Flipping Coin...")}
+            applyEffect(choice){
+                let result = coin.flip();
+                if(result === choice){
+                    permanentState.baseClickStrength += 0.02;
+                    permanentState.bobValue += 0.02;
+                    permanentState.aliceValue += 0.02;
+                    permanentState.internValue += 0.02;
+                    permanentState.autocloneMultiplier += 1;
+                }
+                coin.animate();
+                setTimeout(() => {
+                    coin.createResultText(result === choice);
+                }, 7000);
+            }
         },
         increaseMoney: {
             available: true,
@@ -233,7 +282,7 @@ function handleEndgameRewards(){
     }
 
     // Create our top text
-    document.querySelector(".endgame-upgrades-text").textContent = `Choose a permanent upgrade`;
+    document.querySelector(".endgame-upgrades-text").textContent = `Choose one permanent upgrade`;
 
     // Start by navigating to the object based on current tier
     let tier = upgrades[upgrades.tierLevel];
@@ -264,8 +313,8 @@ function createUpgrade(upgradeObj, key){
     cancelButton.addEventListener("click", () => {eventModal.close()});
 
     if(key === `flipCoin`){
-        headsButton.addEventListener("click", function(){upgradeObj.applyEffect()});
-        tailsButton.addEventListener("click", function(){upgradeObj.applyEffect()});
+        headsButton.addEventListener("click", function(){upgradeObj.applyEffect(`heads`)});
+        tailsButton.addEventListener("click", function(){upgradeObj.applyEffect(`tails`)});
         div.append(headsButton, tailsButton);
         upgradeBtn.classList.add("endgame-coin-button");
     } else {
@@ -327,6 +376,8 @@ function createUpgradeText(main, current, upgraded){
     text.append(mainText, upgradeText);
     return text;
 }
+
+
 
 // Initialize all states and conditions for the purpose of starting a new game
 function initializeGame(){

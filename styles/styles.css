@@ -280,6 +280,14 @@ li {
     width: 100%;
 }
 
+.coin {
+    font-size: 2em;
+    display: inline-block;
+    margin: 1em;
+    text-align: center;
+    font-weight: 900;
+}
+
 .button-container {
     display: flex;
     justify-content: space-between;
@@ -434,5 +442,22 @@ li {
 
     .upgrade-text {
         margin-top: 0;
+    }
+}
+
+div.flipping{
+    animation: 7s flip-coin;
+}
+
+@keyframes flip-coin {
+    0% {
+        rotate: 0deg;
+        opacity: 0;
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        rotate: 3600deg;
     }
 }
