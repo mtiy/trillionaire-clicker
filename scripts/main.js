@@ -141,7 +141,7 @@ let coin = {
     flip(){
         let result = this.array[this.position];
         this.position++;
-        if(this.position > this.array.length) this.position = 0;
+        if(this.position >= this.array.length) this.position = 0;
         return result;
     },
     animate(){
@@ -215,7 +215,7 @@ const upgrades = {
             }
         },
         hardModeReward: {
-            available: true,
+            available: false,
             increase: 2,
             buttonText: `Hard Mode Reward`,
             displayText: `Mr. E is impressed. Not everyone has what it takes to do the hard thing. But someone has to do it.`,
@@ -262,7 +262,7 @@ const upgrades = {
                 return t;
             },
             applyEffect(){
-                addAllPermanentStats(0.01, 1);
+                addAllPermanentStats(0.02, 1);
             }
         },
         increaseMoney: {
@@ -1380,6 +1380,11 @@ function devMode(){
 // Save and Load functions using JSON and localStorage
 function saveGame(){
     localStorage.removeItem("trillionaireClickerSave");
+    let tier1upgrades = {};
+    for(i in upgrades.tier1){
+        tier1upgrades[i] = upgrades.tier1[i].available;
+    }
+    let coinPosition = coin.position;
 
     let save = {
         state: state,
@@ -1389,7 +1394,9 @@ function saveGame(){
         permanentState: permanentState,
         autocloneObject: autocloneObject,
         hiringFair: hiringFair,
-        activateButtonsStatus: activateButtonsStatus
+        activateButtonsStatus: activateButtonsStatus,
+        tier1upgrades: tier1upgrades,
+        coinPosition: coinPosition
     }
 
     localStorage.setItem("trillionaireClickerSave", JSON.stringify(save));
@@ -1402,6 +1409,7 @@ function loadGame(save){
     state = save.state;
     messages = save.messages;
     permanentState = save.permanentState;
+    tier1upgrades = save.tier1upgrades;
 
     people = {
         bob: new Person(save.people.bob.value, save.people.bob.name, save.people.bob.amount, save.people.bob.cost, save.people.bob.cloneCost),
@@ -1429,6 +1437,12 @@ function loadGame(save){
         permanentState.darkMode = false;
         toggleDarkMode();
     }
+
+    for(i in tier1upgrades){
+        upgrades.tier1[i].available = tier1upgrades[i]; 
+    }
+
+    coin.position = save.coinPosition;
 
     console.log("Game Loaded");
 }

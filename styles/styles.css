@@ -216,7 +216,7 @@ li {
 
 .endgame-hard-mode-reward {
     background-color: #880303;
-    color: rgb(202, 189, 189);
+    color: rgb(213, 213, 213);
 }
 
 .endgame-coin-button {
@@ -227,7 +227,7 @@ li {
 
 .endgame-job-button {
     background-color: gray;
-    color: white;
+    color: rgb(255, 255, 255);
 }
 
 .thought-text {
