@@ -225,6 +225,11 @@ li {
     border-radius: 5em;
 }
 
+.endgame-job-button {
+    background-color: gray;
+    color: white;
+}
+
 .thought-text {
     font-style: italic;
 }

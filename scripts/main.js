@@ -158,14 +158,12 @@ let coin = {
         eventModal.textContent = ``;
         b.addEventListener("click", () => {
             eventModal.close();
-            endgameUpgrades.hidden = true;
-            endGame();
         });
         if(matches){
-            t = createUpgradeText(`Your guess is correct! The stranger smiles at you. You feel lucky. Or do you?`, `All stats increased slightly`, ``);
+            t = createUpgradeText(`Your guess is correct! The stranger smiles at you. You feel lucky.`, `All stats doubled (except Mr. E value).`, ``);
 
         } else {
-            t = createUpgradeText(`Your guess is wrong! The stranger shakes his head. Better luck next time.`, ``, ``);
+            t = createUpgradeText(`Your guess is wrong! The stranger shakes his head. Better luck next time.`, `All stats halved (except Mr. E value).`, ``);
         }
         eventModal.append(t, b);
     }
@@ -222,18 +220,19 @@ const upgrades = {
             buttonText: `Hard Mode Reward`,
             displayText: `Mr. E is impressed. Not everyone has what it takes to do the hard thing. But someone has to do it.`,
             createText(){
-                let t = createUpgradeText(this.displayText, `Sacrifices to Mr. E are twice as effective`, ``);
+                let t = createUpgradeText(this.displayText, `Sacrifices to Mr. E are twice as effective (this reward can only be taken once per money level).`, ``);
                 return t;
             },
             applyEffect(){
                 permanentState.misterEValue *= 2;
+                this.available = false;
             }
         },
         flipCoin: {
             available: true,
-            increase: 0,
+            increase: null,
             buttonText: `A Stranger`,
-            displayText: `A strange man approaches you. He holds out a coin. "Call it," he says.`,
+            displayText: `A strange man approaches you. He holds out a coin. "Call it," he says. You sense a lot is on the line.`,
             createText(){
                 let t = document.createElement("p");
                 t.textContent = this.displayText;
@@ -242,19 +241,35 @@ const upgrades = {
             applyEffect(choice){
                 let result = coin.flip();
                 if(result === choice){
-                    
+                    multiplyAllPermanentStats(2);
+                } else {
+                    multiplyAllPermanentStats(0.5);
                 }
                 coin.animate();
                 setTimeout(() => {
                     coin.createResultText(result === choice);
+                    endGame();
                 }, 7000);
+            }
+        },
+        theJob: {
+            available: true,
+            increase: null,
+            buttonText: `The Job`,
+            displayText: `There's nothing wrong with taking the safe option. You put your head down, do your work, and see the results. It could be more, but it can't be less, and that makes you happy.`,
+            createText(){
+                let t = createUpgradeText(this.displayText, `Slight increase to all stats`, `(Except Mr. E value)`);
+                return t;
+            },
+            applyEffect(){
+                addAllPermanentStats(0.01, 1);
             }
         },
         increaseMoney: {
             available: true,
             increase: 1e3,
             buttonText: `Increase Money`,
-            displayText: `Increase your starting money. Note: "1E12" means 1 times 10 to the power of 12. Which is 1 trillion!`,
+            displayText: `Increase your starting money to access new upgrades. You can press reset at any time to go back to 1 trillion.`,
             createText(){
                 let t = createUpgradeText(this.displayText, `Current: ${numberFormat4.format(permanentState.money)}`, `Upgraded: ${numberFormat4.format(permanentState.money*1000)}`);
                 return t;
@@ -271,13 +286,32 @@ const upgrades = {
     tierLevel: `tier1`
 }
 
+function multiplyAllPermanentStats(value){
+    permanentState.baseClickStrength *= value;
+    permanentState.bobValue *= value;
+    permanentState.aliceValue *= value;
+    permanentState.autocloneMultiplier *= value;
+    permanentState.clickBoostMax *= value;
+    permanentState.hiringFairMax *= value;
+    permanentState.internValue *= value;
+}
+
+function addAllPermanentStats(decimal, integer){
+    permanentState.baseClickStrength += decimal;
+    permanentState.bobValue += decimal;
+    permanentState.aliceValue += decimal;
+    permanentState.autocloneMultiplier += integer;
+    permanentState.clickBoostMax += integer;
+    permanentState.hiringFairMax += integer;
+    permanentState.internValue += decimal;
+}
+
 function handleEndgameRewards(){
     // Clear out the buttons if there are any
     while(endgameUpgradesButtons.firstChild){
         endgameUpgradesButtons.removeChild(endgameUpgradesButtons.firstChild);
     }
 
-    // Create our top text
     document.querySelector(".endgame-upgrades-text").textContent = `Choose one permanent upgrade`;
 
     // Start by navigating to the object based on current tier
@@ -309,8 +343,14 @@ function createUpgrade(upgradeObj, key){
     cancelButton.addEventListener("click", () => {eventModal.close()});
 
     if(key === `flipCoin`){
-        headsButton.addEventListener("click", function(){upgradeObj.applyEffect(`heads`)});
-        tailsButton.addEventListener("click", function(){upgradeObj.applyEffect(`tails`)});
+        headsButton.addEventListener("click", function(){
+            upgradeObj.applyEffect(`heads`);
+            endgameUpgrades.hidden = true;
+        });
+        tailsButton.addEventListener("click", function(){
+            upgradeObj.applyEffect(`tails`);
+            endgameUpgrades.hidden = true;
+        });
         div.append(headsButton, tailsButton);
         upgradeBtn.classList.add("endgame-coin-button");
     } else {
@@ -330,6 +370,10 @@ function createUpgrade(upgradeObj, key){
 
     if(key === `hardModeReward`){
         upgradeBtn.classList.add("endgame-hard-mode-reward");
+    }
+
+    if(key === `theJob`){
+        upgradeBtn.classList.add("endgame-job-button");
     }
 
     div.append(cancelButton);
@@ -732,9 +776,6 @@ document.getElementById("startButton").addEventListener("click", () => {
 });
 
 document.getElementById("hardModeButton").addEventListener("click", () => {
-    people.bob.cost = 0, people.bob.cloneCost = 0;
-    people.alice.cost = 0, people.alice.cloneCost = 0;
-    activateButtons.clickUpgrade.cost = 0;
     hardModeModal.close();
     state.paused = false;
 });
