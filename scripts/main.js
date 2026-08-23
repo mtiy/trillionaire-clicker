@@ -117,7 +117,6 @@ function addMobileNotification(button){
     }
 }
 
-
 let permanentState = {
     baseClickStrength: 0.01,
     bobValue: 0.01,
@@ -136,13 +135,13 @@ let permanentState = {
 };
 
 let coin = {
-    array: [`heads`, `heads`, `tails`, `heads`, `tails`],
-    position: 0,
     flip(){
-        let result = this.array[this.position];
-        this.position++;
-        if(this.position >= this.array.length) this.position = 0;
-        return result;
+        let result = Math.random();
+        if(result < 0.5){
+            return `heads`;
+        } else {
+            return `tails`;
+        }
     },
     animate(){
         eventModal.textContent = ``;
@@ -224,7 +223,7 @@ const upgrades = {
                 return t;
             },
             applyEffect(){
-                permanentState.misterEValue *= 2;
+                permanentState.misterEValue *= this.increase;
                 this.available = false;
             }
         },
@@ -281,7 +280,116 @@ const upgrades = {
             }
         }
     },
-    tier2: {},
+    tier2: {
+        hiringFairMax: {
+            available: true,
+            increase: 100,
+            buttonText: `Hiring Fair Max`,
+            displayText: `Hiring Fair Max is the maximum interns per second the hiring fair can hire when fully charged.`,
+            createText(){
+                let t = createUpgradeText(this.displayText, `Current: ${permanentState.hiringFairMax}`, `Upgraded: ${permanentState.hiringFairMax + this.increase}`);
+                return t;
+            },
+            applyEffect(){
+                permanentState.hiringFairMax += this.increase;
+                this.available = false;
+            }
+        },
+        clickBoostMax: {
+            available: true,
+            increase: 100,
+            buttonText: `Click Boost Max`,
+            displayText: `Click Boost Max is the maximum click strength the click boost upgrade will go to.`,
+            createText(){
+                let t = createUpgradeText(this.displayText, `Current: ${permanentState.clickBoostMax}`, `Upgraded: ${permanentState.clickBoostMax + this.increase}`);
+                return t;
+            },
+            applyEffect(){
+                permanentState.clickBoostMax += this.increase;
+                this.available = false;
+            }
+        },
+        effectsMax: {
+            available: true,
+            increase: 1,
+            buttonText: `Active Effects Max`,
+            displayText: `Isn't it annoying only activating one effect at a time? Well, now you can activate two!`,
+            createText(){
+                let t = createUpgradeText(this.displayText, `Can have two effects active at once`, ``);
+                return t;
+            },
+            applyEffect(){
+                permanentState.maxActiveEffects += this.increase;
+                this.available = false;
+            }
+        },
+        hardModeReward: {
+            available: false,
+            increase: 2,
+            buttonText: `Hard Mode Reward`,
+            displayText: `Mr. E is impressed. Not everyone has what it takes to do the hard thing. But someone has to do it.`,
+            createText(){
+                let t = createUpgradeText(this.displayText, `Sacrifices to Mr. E are twice as effective (this reward can only be taken once per money level).`, ``);
+                return t;
+            },
+            applyEffect(){
+                permanentState.misterEValue *= this.increase;
+                this.available = false;
+            }
+        },
+        flipCoin: {
+            available: true,
+            increase: null,
+            buttonText: `A Stranger`,
+            displayText: `You wonder what this stranger's name is. Why is he here? Why are you here?`,
+            createText(){
+                let t = document.createElement("p");
+                t.textContent = this.displayText;
+                return t;
+            },
+            applyEffect(choice){
+                let result = coin.flip();
+                if(result === choice){
+                    multiplyAllPermanentStats(2);
+                } else {
+                    multiplyAllPermanentStats(0.5);
+                }
+                coin.animate();
+                setTimeout(() => {
+                    coin.createResultText(result === choice);
+                    endGame();
+                }, 7000);
+            }
+        },
+        theJob: {
+            available: true,
+            increase: null,
+            buttonText: `The Job`,
+            displayText: `Consistency and discipline are the foundation of society. You understand this. It just takes a little bit, done every day, to make a difference.`,
+            createText(){
+                let t = createUpgradeText(this.displayText, `Slight increase to all stats`, `(Except Mr. E value)`);
+                return t;
+            },
+            applyEffect(){
+                addAllPermanentStats(1, 5);
+            }
+        },
+        increaseMoney: {
+            available: true,
+            increase: 1e85,
+            buttonText: `Increase Money`,
+            displayText: `Increase your starting money to access new upgrades. You can press reset at any time to go back to 1 trillion.`,
+            createText(){
+                let t = createUpgradeText(this.displayText, `Current: ${numberFormat4.format(permanentState.money)}`, `Upgraded: ${numberFormat4.format(permanentState.money*this.increase)}`);
+                return t;
+            },
+            applyEffect(){
+                permanentState.money *= this.increase;
+                this.available = false;
+                upgrades.tierLevel = `tier3`;
+            }
+        }
+    },
     tier3: {},
     tierLevel: `tier1`
 }
@@ -1381,10 +1489,13 @@ function devMode(){
 function saveGame(){
     localStorage.removeItem("trillionaireClickerSave");
     let tier1upgrades = {};
+    let tier2upgrades = {};
     for(i in upgrades.tier1){
         tier1upgrades[i] = upgrades.tier1[i].available;
     }
-    let coinPosition = coin.position;
+    for(i in upgrades.tier2){
+        tier2upgrades[i] = upgrades.tier2[i].available;
+    }
 
     let save = {
         state: state,
@@ -1396,7 +1507,8 @@ function saveGame(){
         hiringFair: hiringFair,
         activateButtonsStatus: activateButtonsStatus,
         tier1upgrades: tier1upgrades,
-        coinPosition: coinPosition
+        tier2upgrades: tier2upgrades,
+        tierLevel: upgrades.tierLevel
     }
 
     localStorage.setItem("trillionaireClickerSave", JSON.stringify(save));
@@ -1409,7 +1521,9 @@ function loadGame(save){
     state = save.state;
     messages = save.messages;
     permanentState = save.permanentState;
-    tier1upgrades = save.tier1upgrades;
+    let tier1upgrades = save.tier1upgrades;
+    let tier2upgrades = save.tier2upgrades;
+    let tierLevel = save.tierLevel;
 
     people = {
         bob: new Person(save.people.bob.value, save.people.bob.name, save.people.bob.amount, save.people.bob.cost, save.people.bob.cloneCost),
@@ -1441,17 +1555,22 @@ function loadGame(save){
     for(i in tier1upgrades){
         upgrades.tier1[i].available = tier1upgrades[i]; 
     }
+    for(i in tier2upgrades){
+        upgrades.tier2[i].available = tier2upgrades[i];
+    }
 
-    coin.position = save.coinPosition;
+    if(tierLevel === undefined) tierLevel = `tier1`;
+    upgrades.tierLevel = tierLevel;
 
     console.log("Game Loaded");
 }
 
 // Loads in the game state 
 window.onload = (event) => {
-    if(localStorage.getItem("trillionaireClickerSave") != null){
+    try {
         loadGame(JSON.parse(localStorage.getItem("trillionaireClickerSave")));
-    } else {
+    } catch(error){
+        console.error(error);
         startModal.showModal();
         initializeGame();
     }
