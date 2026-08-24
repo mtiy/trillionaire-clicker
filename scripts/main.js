@@ -377,7 +377,7 @@ const upgrades = {
                 return t;
             },
             applyEffect(){
-                addAllPermanentStats(1, 5);
+                addAllPermanentStats(2, 10);
             }
         },
         increaseMoney: {
@@ -396,7 +396,59 @@ const upgrades = {
             }
         }
     },
-    tier3: {},
+    tier3: {
+        flipCoin: {
+            available: true,
+            increase: null,
+            buttonText: `A Stranger`,
+            displayText: `You wonder what this stranger's name is. Why is he here? Why are you here?`,
+            createText(){
+                let t = document.createElement("p");
+                t.textContent = this.displayText;
+                return t;
+            },
+            applyEffect(choice){
+                let result = coin.flip();
+                if(result === choice){
+                    multiplyAllPermanentStats(2);
+                } else {
+                    multiplyAllPermanentStats(0.5);
+                }
+                coin.animate();
+                setTimeout(() => {
+                    coin.createResultText(result === choice);
+                    endGame();
+                }, 7000);
+            }
+        },
+        theJob: {
+            available: true,
+            increase: null,
+            buttonText: `The Job`,
+            displayText: `Consistency and discipline are the foundation of society. You understand this. It just takes a little bit, done every day, to make a difference.`,
+            createText(){
+                let t = createUpgradeText(this.displayText, `Slight increase to all stats`, `(Except Mr. E value)`);
+                return t;
+            },
+            applyEffect(){
+                addAllPermanentStats(20, 50);
+            }
+        },
+        increaseMoney: {
+            available: true,
+            increase: 1e200,
+            buttonText: `Increase Money`,
+            displayText: `This is currently the end of playable content. No guarantee that anything happens from here on out.`,
+            createText(){
+                let t = createUpgradeText(this.displayText, `Current: ${numberFormat4.format(permanentState.money)}`, `Upgraded: ${numberFormat4.format(permanentState.money*this.increase)}`);
+                return t;
+            },
+            applyEffect(){
+                permanentState.money *= this.increase;
+                this.available = false;
+            }
+        }
+    },
     tierLevel: `tier1`
 }
 
