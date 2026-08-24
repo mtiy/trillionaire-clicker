@@ -38,6 +38,7 @@ const root = document.querySelector(":root");
 const importModal = document.getElementById("importModal");
 const statsScreenButton = document.getElementById("stats-screen");
 const statsModal = document.getElementById("stats-modal");
+const extraNotifications = document.querySelector(".extra-notifications");
 
 // Mobile buttons, remove notification effect on click
 const mobileButtons = document.querySelectorAll(".mobile-button");
@@ -638,7 +639,9 @@ function initializeGame(){
         events: {
             firstEvent: false,
             secondEvent: false,
-            automation: false
+            automation: false,
+            bloodMoon: {unlocked: false, used: false},
+            dontClick: false
         },
         killInterns: false,
         clickPercent: 0,
@@ -821,17 +824,17 @@ function initializeGame(){
 
     secondRandomEvents = [
         {
-            chance: 0.3,
-            name: `New Religion`,
-            buttonText: `I love Mr E!`,
-            flavorText: `The people love Mr E. Or, wait, why do we love Mr E? We love Mr E! We can't wait to be sacrificed!`,
-            effectText: `Future sacrifices to Mr E are twice as effective`,
+            chance: 0.25,
+            name: `Blood Moon`,
+            buttonText: `Spooky`,
+            flavorText: `The Blood Moon rises over the waste land. Mr. E walks outside and stares up at it. He must offer a good sacrifice.`,
+            effectText: `Next sacrifice is 100 times stronger, no more sacrifices after that.`,
             effect(){
-                people.misterE.amount *= 2;
+                state.events.bloodMoon.unlocked = true;
             }
         },
         {
-            chance: 0.3,
+            chance: 0.25,
             name: `Copy of a Copy of a`,
             buttonText: `I'm sure it's fine!`,
             flavorText: `An intern comes up with a bright idea. Instead of cloning the original Bob and Alice, why not just clone the clones? 
@@ -844,7 +847,7 @@ function initializeGame(){
             }
         },
         {
-            chance: 0.3,
+            chance: 0.25,
             name: `Aesthetic Era`,
             buttonText: `Ran out of ideas for events, huh?`,
             flavorText: `You need a change. A new look. A new you. So you pop over to the store. A few minutes later 
@@ -859,16 +862,14 @@ function initializeGame(){
             }
         },
         {
-            chance: 0.1,
-            name: `Getting Closer`,
-            buttonText: `I won't`,
-            flavorText: `You can see it now. Getting closer. Money ticking down. Don't give up.`,
-            effectText: `All production doubled`,
+            chance: 0.25,
+            name: `Don't Click`,
+            buttonText: `Does this count? That's not fair!`,
+            flavorText: `Here's a thought: what if you don't click. What if the longer you don't click, the stronger your next click is? I knew you'd love it.`,
+            effectText: `Click Strength increases continuously, clicking resets it.`,
             effect(){
-                people.bob.value *= 2;
-                people.alice.value *= 2;
-                people.intern.value *= 2;
-                autocloneObject.multiplier *= 2;
+                state.events.dontClick = true;
+                extraNotifications.style.visibility = `visible`;
             }
         }
     ];
@@ -907,6 +908,7 @@ function resetDisplay(){
 
     document.querySelector(".endgame-upgrades-text").textContent = ``;
     endgameUpgrades.hidden = true;
+    extraNotifications.style.visibility = `hidden`;
 
     gameOverDisplay.hidden = true;
     gameOverDisplay.classList.remove("fade-in");
@@ -1037,9 +1039,16 @@ class Person{
         let sb = document.createElement("button");
         sb.textContent = buttonText;
         sb.classList.add("clone-button");
-        sb.addEventListener("click", () => {
-            sacrifice([people.bob.amount-1, people.alice.amount-1, people.intern.amount]);
+        sb.addEventListener("click", function(){
+            if(state.events.bloodMoon.unlocked){
+                sacrifice([(people.bob.amount*100)-1, (people.alice.amount*100)-1, (people.intern.amount*100)]);
+                this.disabled = true;
+                state.events.bloodMoon.used = true;
+            } else {
+                sacrifice([people.bob.amount-1, people.alice.amount-1, people.intern.amount]);
+            }
         });
+        if(state.events.bloodMoon.used) sb.disabled = true;
         return sb;
     }
 }
@@ -1108,6 +1117,10 @@ function updateDisplay(){
 
     if(state.unlocks.hasInterns){
         document.getElementById(people.intern.name).textContent = `${formatPeople(people.intern.amount, 1e6)} ${people.intern.name}: Multiply autocloning by ${(1+people.intern.amount*people.intern.value).toFixed(2)}`;
+    }
+
+    if(state.events.dontClick){
+        extraNotifications.textContent = `Click Strength: ${state.clickStrength.toFixed(2)}`;
     }
 }
 
@@ -1268,8 +1281,8 @@ function updateState(dt){
         }
     }
 
-    // Million dollar random event
-    if(!state.events.firstEvent && round(state.spentMoney) >= 1e6){
+    // First random event
+    if(!state.events.firstEvent && round(state.spentMoney) >= (permanentState.money*1e-6)){
         let event = chooseRandomEvent(firstRandomEvents);
         createRandomEvent(event);
         eventModal.showModal();
@@ -1284,8 +1297,8 @@ function updateState(dt){
         addMobileNotification(mobilePeopleButton);
     }
 
-    // Billion dollar random event
-    if(!state.events.secondEvent && round(state.spentMoney) >= 1e9){
+    // Second random event
+    if(!state.events.secondEvent && round(state.spentMoney) >= (permanentState.money*1e-3)){
         let event = chooseRandomEvent(secondRandomEvents);
         createRandomEvent(event);
         eventModal.showModal();
@@ -1340,6 +1353,10 @@ function updateState(dt){
 
     if(activateButtons.clickUpgrade.activated){
         boostClickPower(dt);
+    }
+
+    if(state.events.dontClick){
+        linearClickStrengthIncrease(dt);
     }
 
     if(state.killInterns && people.intern.amount > 0){
@@ -1417,6 +1434,18 @@ function boostClickPower(dt){
     }
 }
 
+// For the Don't Click event, just increases click strength indefinitely. Strength reset is handled in the window event listener below
+function linearClickStrengthIncrease(dt){
+    state.clickStrength += 0.1/1000 * dt;
+}
+
+// For future "Don't click Event"
+window.addEventListener("click", () => {
+    if(state.events.dontClick){
+        state.clickStrength = 0;
+    }
+});
+
 function round(s){
     return Math.round(s*100)/100;
 }
@@ -1484,8 +1513,13 @@ function createRandomEvent(obj){
     mainText.append(document.createElement("br"));
     mainText.append(effdiv);
 
+    let eventMessage = document.createElement("div");
+    eventMessage.classList.add("message");
+    eventMessage.classList.add("fade-in");
+    eventMessage.textContent = titleText.textContent + `: ` + effdiv.textContent;
+
     eventModal.append(mainText, exitButton);
-    messageLog.prepend(titleText.textContent + `: ` + effdiv.textContent);
+    messageLog.prepend(eventMessage);
 }
 
 // Creates game over text and handles end of game states (hard mode or normal)
@@ -1685,6 +1719,8 @@ function loadGame(save){
 
     if(!save.statsButton) statsScreenButton.hidden = false;
 
+    if(state.events.dontClick) extraNotifications.style.visibility = `visible`;
+
     for(i in tier1upgrades){
         upgrades.tier1[i].available = tier1upgrades[i]; 
     }
@@ -1761,5 +1797,3 @@ function calculateOfflineProgress(seconds){
     state.paused = false;
 }
 
-// For future "Don't click Event"
-// window.addEventListener("click", () => {console.log("You clicked!")});

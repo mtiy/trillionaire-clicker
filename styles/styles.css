@@ -98,6 +98,15 @@ li {
     opacity: 0;
 }
 
+.extra-notifications {
+    max-width: 10em;
+    margin-left: auto;
+    margin-right: auto;
+    padding-top: 2em;
+    font-size: 1.3rem;
+    visibility: hidden;
+}
+
 .people-container {
     display: none;
     /* border: 2px solid black; */
@@ -374,7 +383,7 @@ li {
     .horizontal-wrapper {
         flex-direction: row;
         gap: 2em;
-        margin-top: 3em;
+        margin-top: 1em;
         font-size: calc(.5em + .5vw);
     }
 
