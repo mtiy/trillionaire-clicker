@@ -119,6 +119,11 @@ function addMobileNotification(button){
     }
 }
 
+const thoughts = [
+    `I spent a trillion dollars, how much more could he want?`,
+    `What are we even spending this money on?`
+];
+
 let permanentState = {
     baseClickStrength: 0.01,
     bobValue: 0.01,
@@ -928,6 +933,9 @@ document.getElementById("restartYes").addEventListener("click", () => {
 // Resets state and display but does not change permanent state (besides starting money reset)
 function restartRun(){
     permanentState.money = 1e12;
+    upgrades.tierLevel = `tier1`;
+    upgrades.tier1.increaseMoney.available = true;
+    upgrades.tier2.increaseMoney.available = true;
     initializeGame();
     resetDisplay();
     saveGame();
@@ -1431,40 +1439,27 @@ function createRandomEvent(obj){
 // Creates game over text and handles end of game states (hard mode or normal)
 function endGame(){
     permanentState.totalMoneySpent += state.spentMoney;
+    permanentState.totalProgress++;
 
-    // Endgame Text
     let text = createEndgameText();
-    let thoughtText = document.createElement("div");
-    thoughtText.textContent = `I spent a trillion dollars, how much more could he want?`;
-    thoughtText.classList.add("thought-text");
+    for(i of text){
+        document.querySelector(".game-over-text").append(i);
+    }
 
-    document.querySelector(".game-over-text").append(t1,document.createElement("br"),t2,document.createElement("br"),t3,document.createElement("br"),spendText, document.createElement("br"), thoughtText);
+    let unlockText = getUnlock(permanentState.totalProgress);
+    if(unlockText){
+        let div = document.createElement("div");
+        div.classList.add("unlock-text");
+        div.textContent = unlockText;
+        document.querySelector(".game-over-text").append(div);
+    }
 
-    // Create play again buttons
-    let playAgain = document.createElement("button");
-    let playAgainHard = document.createElement("button");
+    let buttons = createReplayButtons();
 
-    playAgain.classList.add("end-game-button");
-    playAgain.textContent = `Play Again`;
-    playAgain.addEventListener("click", () => {
-        initializeGame();
-        resetDisplay();
-    });
-
-    playAgainHard.classList.add("end-game-button");
-    playAgainHard.textContent = `Play Again (Hard Mode)`;
-    playAgainHard.addEventListener("click", () => {
-        initializeGame();
-        resetDisplay();
-        state.paused = true;
-        lastTime = null;
-        state.hardMode = true;
-        hardModeModal.showModal(); 
-    });
-
-    endgameButtons.append(playAgain, playAgainHard);
-       
-    // Show game over text
+    for(i of buttons){
+        endgameButtons.append(i);
+    }
+    
     gameOverDisplay.hidden = false;
     gameOverDisplay.classList.add("fade-in");
 }
@@ -1475,24 +1470,52 @@ function createEndgameText(){
     let p2 = document.createElement("p");
     let p3 = document.createElement("p");
     let p4 = document.createElement("p");
+    let p5 = document.createElement("p");
     p1.textContent = `You find yourself here again. Or is this the first time?`;
-    p2.textContent = `Mr E stares at the pile of money you've spent.`;
-    p3.textContent = `"More," he says, "I need more".`;
+    p2.textContent = `Mr. E pulls out another briefcase of money.`;
+    p3.textContent = `"More," he says, "We need to spend more."`;
     p4.textContent = `You have spent a total of ${formatMoney(permanentState.totalMoneySpent, 1e12)}`;
-    return [p1, p2, p3, p4];
+    p5.textContent = getThought(permanentState.totalProgress);
+    p5.classList.add("thought-text");
+    return [p1, p2, p3, p4, p5];
 }
 
 // Find the current thought to display based on runs completed
 function getThought(runs){
     let index = 0;
-    if(runs === 1){
+    if(runs > 2){
         index = 1;
     }
-    if(runs === 2){
-        index = 2;
-    }
-    if(runs > 2){
-        index = 3;
+    return thoughts[index];
+}
+
+// Create the play again/hard mode buttons
+function createReplayButtons(){
+    let playAgain = createButton(`Play Again`, `end-game-button`);
+    let playAgainHard = createButton(`Play Again (Hard Mode)`, `end-game-button`);
+
+    playAgain.addEventListener("click", () => {
+        initializeGame();
+        resetDisplay();
+    });
+
+    playAgainHard.addEventListener("click", () => {
+        initializeGame();
+        resetDisplay();
+        state.paused = true;
+        lastTime = null;
+        state.hardMode = true;
+        hardModeModal.showModal(); 
+    });
+
+    return [playAgain, playAgainHard];
+}
+
+// Give unlocks based on player progress through upgrade tiers
+function getUnlock(runs){
+    if(runs === 1){
+        statsScreenButton.hidden = false;
+        return `Stats Screen Unlocked`;
     }
 }
 
@@ -1563,7 +1586,8 @@ function saveGame(){
         activateButtonsStatus: activateButtonsStatus,
         tier1upgrades: tier1upgrades,
         tier2upgrades: tier2upgrades,
-        tierLevel: upgrades.tierLevel
+        tierLevel: upgrades.tierLevel,
+        statsButton: statsScreenButton.hidden
     }
 
     localStorage.setItem("trillionaireClickerSave", JSON.stringify(save));
@@ -1606,6 +1630,8 @@ function loadGame(save){
         permanentState.darkMode = false;
         toggleDarkMode();
     }
+
+    if(!save.statsButton) statsScreenButton.hidden = false;
 
     for(i in tier1upgrades){
         upgrades.tier1[i].available = tier1upgrades[i]; 

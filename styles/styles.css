@@ -203,6 +203,12 @@ li {
     font-size: 2em;
 }
 
+.unlock-text {
+    background-color: rgb(1, 65, 1);
+    color: rgb(221, 203, 42);
+    text-align: center;
+}
+
 .endgame-upgrades-button {
     min-width: 5em;
     padding: 1em 0.5em;
@@ -404,7 +410,7 @@ li {
         border: 2px solid black;
         padding: 1em 1em;
         font-size: 1.2em;
-        width: 20em;
+        min-width: 20em;
         min-height: 20em;
         margin-right:auto;
         order: 3;
