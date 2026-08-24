@@ -36,6 +36,8 @@ const restartConfirmModal = document.getElementById("restartConfirm");
 const eventModal = document.getElementById("eventModal");
 const root = document.querySelector(":root");
 const importModal = document.getElementById("importModal");
+const statsScreenButton = document.getElementById("stats-screen");
+const statsModal = document.getElementById("stats-modal");
 
 // Mobile buttons, remove notification effect on click
 const mobileButtons = document.querySelectorAll(".mobile-button");
@@ -128,10 +130,9 @@ let permanentState = {
     misterEValue: 1e-5,
     money: 1e12,
     totalMoneySpent: 0,
-    firstPrestige: false,
-    endgameUpgradeCounter: 0,
     darkMode: false,
-    maxActiveEffects: 1
+    maxActiveEffects: 1,
+    totalProgress: 0
 };
 
 let coin = {
@@ -526,7 +527,37 @@ function createUpgradeText(main, current, upgraded, repeatable){
     return text;
 }
 
+statsScreenButton.addEventListener("click", () => {
+    statsModal.textContent = ``;
+    let content = getStats([
+        {name: "Click Strength", value: permanentState.baseClickStrength},
+        {name: "Bob Value", value: permanentState.bobValue},
+        {name: "Alice Value", value: permanentState.aliceValue},
+        {name: "Intern Value", value: permanentState.internValue},
+        {name: "Autocloner Multiplier", value: permanentState.autocloneMultiplier},
+        {name: "Click Boost Max", value: permanentState.clickBoostMax},
+        {name: "Hiring Fair Max", value: permanentState.hiringFairMax},
+        {name: "Mr. E Value (per sacrifice)", value: permanentState.misterEValue},
+        {name: "Starting Money", value: numberFormat4.format(permanentState.money)},
+        {name: "Max Active Effects", value: permanentState.maxActiveEffects}
+    ]);
+    let closeButton = createButton(`Close`, `modal-button`);
+    closeButton.addEventListener("click", () => statsModal.close());
+    statsModal.append(content, closeButton);
+    statsModal.showModal();
+});
 
+// Pass in an array of objects with names and values to display ex. [{name: "Click Strength", value: 0.01}]
+function getStats(stats){
+    let c = document.createElement("div");
+    for(i of stats){
+        let d = document.createElement("div");
+        d.textContent = `${i.name}: ${i.value}`;
+        d.classList.add("stats-line");
+        c.append(d);
+    }
+    return c;
+}
 
 // Initialize all states and conditions for the purpose of starting a new game
 function initializeGame(){
@@ -1016,7 +1047,7 @@ function updateDisplay(){
     }
 
     if(state.unlocks.hasInterns){
-        document.getElementById(people.intern.name).textContent = `${people.intern.name}: Multiply autocloning by ${(1+people.intern.amount*people.intern.value).toFixed(2)}`;
+        document.getElementById(people.intern.name).textContent = `${formatPeople(people.intern.amount, 1e6)} ${people.intern.name}: Multiply autocloning by ${(1+people.intern.amount*people.intern.value).toFixed(2)}`;
     }
 }
 
@@ -1402,10 +1433,7 @@ function endGame(){
     permanentState.totalMoneySpent += state.spentMoney;
 
     // Endgame Text
-    let t1 = document.createTextNode(`You find yourself here again. Or is this the first time?`);
-    let t2 = document.createTextNode(`Mr E stares at the pile of money you've spent.`);
-    let t3 = document.createTextNode(`"More," he says, "I need more".`);
-    let spendText = document.createTextNode(`You have spent a total of ${formatMoney(permanentState.totalMoneySpent, 1e12)}`);
+    let text = createEndgameText();
     let thoughtText = document.createElement("div");
     thoughtText.textContent = `I spent a trillion dollars, how much more could he want?`;
     thoughtText.classList.add("thought-text");
@@ -1439,6 +1467,33 @@ function endGame(){
     // Show game over text
     gameOverDisplay.hidden = false;
     gameOverDisplay.classList.add("fade-in");
+}
+
+// Endgame text is always the same, except for thoughts and unlocks that appear as you complete runs
+function createEndgameText(){
+    let p1 = document.createElement("p");
+    let p2 = document.createElement("p");
+    let p3 = document.createElement("p");
+    let p4 = document.createElement("p");
+    p1.textContent = `You find yourself here again. Or is this the first time?`;
+    p2.textContent = `Mr E stares at the pile of money you've spent.`;
+    p3.textContent = `"More," he says, "I need more".`;
+    p4.textContent = `You have spent a total of ${formatMoney(permanentState.totalMoneySpent, 1e12)}`;
+    return [p1, p2, p3, p4];
+}
+
+// Find the current thought to display based on runs completed
+function getThought(runs){
+    let index = 0;
+    if(runs === 1){
+        index = 1;
+    }
+    if(runs === 2){
+        index = 2;
+    }
+    if(runs > 2){
+        index = 3;
+    }
 }
 
 // Game Loop
@@ -1627,3 +1682,6 @@ function calculateOfflineProgress(seconds){
     console.log("Offline progress finished calculating");
     state.paused = false;
 }
+
+// For future "Don't click Event"
+// window.addEventListener("click", () => {console.log("You clicked!")});
