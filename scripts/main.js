@@ -10,9 +10,10 @@ let activateButtonsStatus;
 
 // Used for formatting our money
 const numberFormat1 = new Intl.NumberFormat("en-US", {style: "currency", currency: "USD"});
-const numberFormat2 = new Intl.NumberFormat("en-US", {notation: "scientific", minimumFractionDigits: "8"});
+const numberFormat2 = new Intl.NumberFormat("en-US", {notation: "scientific", minimumFractionDigits: "8", maximumFractionDigits:"8"});
 const numberFormat3 = new Intl.NumberFormat("en-US", {maximumFractionDigits:"0"});
 const numberFormat4 = new Intl.NumberFormat("en-US", {notation: "scientific"});
+const numberFormat5 = new Intl.NumberFormat("en-US", {notation: "scientific", maximumFractionDigits:"2"});
 
 const moneyDisplay = document.querySelector(".money-display");
 const moneyButton = document.querySelector(".money-button");
@@ -37,6 +38,7 @@ const eventModal = document.getElementById("eventModal");
 const root = document.querySelector(":root");
 const importModal = document.getElementById("importModal");
 const statsScreenButton = document.getElementById("stats-screen");
+const mobileStatsButton = document.getElementById("mobile-stats-screen");
 const statsModal = document.getElementById("stats-modal");
 const extraNotifications = document.querySelector(".extra-notifications");
 
@@ -585,7 +587,10 @@ function createUpgradeText(main, current, upgraded, repeatable){
     return text;
 }
 
-statsScreenButton.addEventListener("click", () => {
+statsScreenButton.addEventListener("click", displayStats);
+mobileStatsButton.addEventListener("click", displayStats);
+
+function displayStats(){
     statsModal.textContent = ``;
     let content = getStats([
         {name: "Click Strength", value: permanentState.baseClickStrength},
@@ -603,7 +608,7 @@ statsScreenButton.addEventListener("click", () => {
     closeButton.addEventListener("click", () => statsModal.close());
     statsModal.append(content, closeButton);
     statsModal.showModal();
-});
+}
 
 // Pass in an array of objects with names and values to display ex. [{name: "Click Strength", value: 0.01}]
 function getStats(stats){
@@ -1086,7 +1091,7 @@ function formatPeople(amount, cap){
     if(amount <= cap){
         return numberFormat3.format(amount);
     } else {
-        return numberFormat2.format(amount);
+        return numberFormat5.format(amount);
     }
 }
 
@@ -1601,6 +1606,7 @@ function createReplayButtons(){
 function getUnlock(runs){
     if(runs === 1){
         statsScreenButton.hidden = false;
+        mobileStatsButton.hidden = false;
         return `Stats Screen Unlocked`;
     }
 }
@@ -1717,7 +1723,10 @@ function loadGame(save){
         toggleDarkMode();
     }
 
-    if(!save.statsButton) statsScreenButton.hidden = false;
+    if(!save.statsButton){
+        statsScreenButton.hidden = false;
+        mobileStatsButton.hidden = false;
+    } 
 
     if(state.events.dontClick) extraNotifications.style.visibility = `visible`;
 
