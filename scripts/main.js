@@ -131,8 +131,10 @@ let permanentState = {
     baseClickStrength: 0.01,
     bobValue: 0.01,
     bobMax: 100000,
+    bobLow: 90000,
     aliceValue: 0.01,
     aliceMax: 100000,
+    aliceLow: 90000,
     autocloneMultiplier: 1,
     clickBoostMax: 1,
     hiringFairMax: 10,
@@ -686,10 +688,10 @@ function initializeGame(){
     ];
 
     people = {
-        bob: new Person(0, "Bob", 1, 0.50, 0.70, 0, permanentState.bobMax),
-        alice: new Person(0, "Alice", 1, 300, 400, 0, permanentState.aliceMax),
-        intern: new Person(permanentState.internValue, "Interns", 0, 2e5, null, null, null),
-        misterE: new Person(0, "Mr E", permanentState.misterEValue, 50e6, null, null, null)
+        bob: new Person(0, "Bob", 1, 0.50, 0.70, 0, permanentState.bobMax, permanentState.bobLow),
+        alice: new Person(0, "Alice", 1, 300, 400, 0, permanentState.aliceMax, permanentState.aliceLow),
+        intern: new Person(permanentState.internValue, "Interns", 0, 2e5),
+        misterE: new Person(0, "Mr E", permanentState.misterEValue, 50e6)
     };
 
     activateButtonsStatus = [0,0,0,0,0];
@@ -1028,7 +1030,7 @@ document.getElementById("restartNo").addEventListener("click", () => {
 });
 
 class Person{
-    constructor(value, name, amount, cost, cloneCost, negAmount, maxAmount){
+    constructor(value, name, amount, cost, cloneCost, negAmount, maxAmount, lowAmount){
         this.value = value;
         this.name = name;
         this.amount = amount;
@@ -1036,6 +1038,8 @@ class Person{
         this.cloneCost = cloneCost;
         this.negAmount = negAmount;
         this.maxAmount = maxAmount;
+        this.lowAmount = lowAmount;
+        this.sweetSpot = false;
     }
 
     createElement(text){
@@ -1051,6 +1055,16 @@ class Person{
         cb.textContent = buttonText;
         cb.addEventListener("click", () => {
             this.clone(state.clickStrength*100);
+        });
+        cb.classList.add("clone-button");
+        return cb;
+    }
+
+    createHireButton(buttonText){
+        let cb = document.createElement("button");
+        cb.textContent = buttonText;
+        cb.addEventListener("click", () => {
+            this.amount += state.clickStrength*100;
         });
         cb.classList.add("clone-button");
         return cb;
@@ -1080,19 +1094,31 @@ class Person{
         }
         if(this.amount === this.maxAmount){
             this.negAmount += toIncrease;
-            console.log(this.negAmount);
             return;
         }
         if((this.amount + toIncrease) >= this.maxAmount){
             let diff = this.amount + toIncrease - this.maxAmount;
             this.amount = this.maxAmount;
             this.negAmount += diff;
+            return;
         }
     }
 
     calculate(){
         let total = this.amount - this.negAmount;
         if(total < 0) total = 0;
+        if(this.lowAmount <= (this.amount + this.negAmount) && (this.amount + this.negAmount) <= this.maxAmount){
+            total *= 10;
+            if(!this.sweetSpot){
+                this.sweetSpot = true;
+                document.getElementById(this.name).classList.add("clone-sweet-spot");
+            }
+        } else {
+            if(this.sweetSpot){
+                this.sweetSpot = false;
+                document.getElementById(this.name).classList.remove("clone-sweet-spot");
+            }
+        }
         return total * this.value;
     }
 }
@@ -1209,7 +1235,7 @@ function updateDisplay(){
     }
 
     if(state.unlocks.hasAlice){
-        document.getElementById(people.alice.name).textContent = `${formatPeople(people.alice.amount, 1e6)} ${people.alice.name}s: Multiply spending by ${(1+people.alice.value*people.alice.amount).toFixed(2)}`;
+        document.getElementById(people.alice.name).textContent = `${formatPeople(people.alice.amount + people.alice.negAmount, 1e6)} ${people.alice.name}s: Multiply spending by ${(1+people.alice.calculate()).toFixed(2)}`;
     }
 
     if(state.unlocks.hasInterns){
@@ -1346,7 +1372,7 @@ function updateState(dt){
 
     if(!state.unlocks.hasInterns && round(state.spentMoney) >= people.intern.cost){
         peopleDisplay.append(people.intern.createElement(`${people.intern.name}: Multiply autocloning by ${1+people.intern.value*people.intern.amount}`));
-        peopleDisplay.append(people.intern.createCloneButton("Hire"));
+        peopleDisplay.append(people.intern.createHireButton("Hire"));
         state.unlocks.hasInterns = true;
         addMobileNotification(mobilePeopleButton);
     }
@@ -1436,8 +1462,8 @@ function updateState(dt){
         state.unlocks.moneyText = true;
     }
 
-    // Equation determining how much our money decreases per tick
-    let decreaseAmount = people.bob.calculate() * (1 + people.alice.amount * people.alice.value) * Math.E**(people.misterE.value);
+    // Equation determining how much our money decreases per tick: y = bob x alice x e^mister E value
+    let decreaseAmount = people.bob.calculate() * (1 + people.alice.calculate()) * Math.E**(people.misterE.value);
 
     // Check if game is over
     if(state.money - decreaseAmount/1000*dt <= 0){
@@ -1531,7 +1557,7 @@ class ActivateButton{
 
 function autoclone(ac, dt){
     people.bob.clone(ac.multiplier * ac.bobAmount/1000 * dt * (1+people.intern.amount*people.intern.value))
-    people.alice.amount += ac.multiplier * ac.aliceAmount/1000 * dt * (1+people.intern.amount*people.intern.value);
+    people.alice.clone(ac.multiplier * ac.aliceAmount/1000 * dt * (1+people.intern.amount*people.intern.value));
 }
 
 function hireInterns(dt){

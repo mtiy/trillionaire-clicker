@@ -118,6 +118,11 @@ li {
     order: 2;
 }
 
+.clone-sweet-spot {
+    background-color: rgb(68, 60, 40);
+    color: rgb(89, 207, 78);
+}
+
 .click-upgrade-container {
     display: none;
     /* border: 2px solid black; */
