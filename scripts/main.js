@@ -136,6 +136,7 @@ let permanentState = {
     hiringFairMax: 10,
     internValue: 0.01,
     misterEValue: 1e-5,
+    sacrificeAmount: 1,
     money: 1e12,
     totalMoneySpent: 0,
     darkMode: false,
@@ -651,7 +652,8 @@ function initializeGame(){
         killInterns: false,
         clickPercent: 0,
         roundButtons: false,
-        activeEffects: 0
+        activeEffects: 0,
+        autoSacrifice: false
     };
 
     messages = [
@@ -688,7 +690,7 @@ function initializeGame(){
         misterE: new Person(0, "Mr E", permanentState.misterEValue, 50e6, null)
     };
 
-    activateButtonsStatus = [0,0,0,0];
+    activateButtonsStatus = [0,0,0,0,0];
 
     activateButtons = {
         clickUpgrade: {
@@ -728,6 +730,16 @@ function initializeGame(){
             },
             cost: 1.5e6,
             activated: false
+        },
+        sacrifice: {
+            removeUpgrade(){
+                state.autoSacrifice = false;
+                activateButtons.sacrifice.timer = 0;
+                activateButtons.sacrifice.activated = false;
+            },
+            cost: 50e6,
+            activated: false,
+            timer: 0
         }
     };
 
@@ -1078,6 +1090,33 @@ function sacrifice(peopleArray){
     document.getElementById(people.misterE.name).textContent = `${people.misterE.name}: Multiply spending by e^${people.misterE.value.toFixed(4)}`;
 }
 
+// Auto Sacrifice: sacrifices 1 person per second from each person category, does not do it if at minimum
+function autoSacrifice(dt){
+    if(activateButtons.sacrifice.timer + dt >= 1000){
+        activateButtons.sacrifice.timer = 0;
+        let total = 0;
+        if((people.bob.amount - permanentState.sacrificeAmount) >= 1){
+            people.bob.amount -= permanentState.sacrificeAmount;
+            total += permanentState.sacrificeAmount;
+        }
+        if((people.alice.amount - permanentState.sacrificeAmount) >= 1){
+            people.alice.amount -= permanentState.sacrificeAmount;
+            total += permanentState.sacrificeAmount;
+        }
+        if((people.intern.amount - permanentState.sacrificeAmount) >= 0){
+            people.intern.amount -= permanentState.sacrificeAmount;
+            total += permanentState.sacrificeAmount;
+        }
+        people.bob.amount = Math.round(people.bob.amount);
+        people.alice.amount = Math.round(people.alice.amount);
+        people.intern.amount = Math.round(people.intern.amount);
+        people.misterE.value += (total * 1e-4);
+    } else {
+        activateButtons.sacrifice.timer += dt;
+    }
+
+}
+
 // Formatting money - if money is above cap, format with scientific notation
 function formatMoney(amount, cap){
     if(amount <= cap){
@@ -1126,6 +1165,10 @@ function updateDisplay(){
 
     if(state.events.dontClick){
         extraNotifications.textContent = `Click Strength: ${state.clickStrength.toFixed(2)}`;
+    }
+
+    if(state.autoSacrifice){
+        document.getElementById(people.misterE.name).textContent = `${people.misterE.name}: Multiply spending by e^${people.misterE.value.toFixed(4)}`;
     }
 }
 
@@ -1296,10 +1339,34 @@ function updateState(dt){
 
     // Unlocking Mr E
     if(!state.unlocks.hasMisterE && round(state.spentMoney) >= people.misterE.cost){
+        let autoSacrifice = new ActivateButton("Sacrifice", "sacrificeButton", function(){
+            if(activateButtons.sacrifice.activated){
+                activateButtons.sacrifice.removeUpgrade();
+                this.classList.remove("activate-button-activated");
+                activateButtonsStatus[4] = 0;
+                this.textContent = "Activate";
+                state.activeEffects--;
+            } else {
+                if(state.activeEffects >= permanentState.maxActiveEffects){
+                    console.log(`NOPE`);
+                    return;
+                }
+                state.activeEffects++;
+                this.classList.add("activate-button-activated");
+                activateButtonsStatus[4] = 1;
+                this.textContent = "Deactivate";
+                activateButtons.sacrifice.activated = true;
+                state.autoSacrifice = true;
+            }
+        });
         peopleDisplay.append(people.misterE.createElement(`${people.misterE.name}: Multiply spending by e^${people.misterE.value.toFixed(4)}`));
-        peopleDisplay.append(people.misterE.createSacrificeButton("Sacrifice"));
         state.unlocks.hasMisterE = true;
+        clickDisplay.append(autoSacrifice.createButton("sacrificeText"));
         addMobileNotification(mobilePeopleButton);
+        if(activateButtonsStatus[4]){
+            document.getElementById("sacrificeButton").classList.add("activate-button-activated");
+            document.getElementById("sacrificeButton").textContent = "Deactivate";
+        }
     }
 
     // Second random event
@@ -1369,6 +1436,10 @@ function updateState(dt){
         if(people.intern.amount < 0){
             people.intern.amount = 0;
         }
+    }
+
+    if(state.autoSacrifice){
+        autoSacrifice(dt);
     }
 
     if(totalTime - lastSave >= 5000){

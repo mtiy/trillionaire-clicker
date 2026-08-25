@@ -396,7 +396,7 @@ li {
         font-size: 1.2em;
         min-width: 20em;
         min-height: 10em;
-        max-height: 14.7em;
+        /* max-height: 14.7em; */
         margin-left:auto;
         order: 1;
     }
