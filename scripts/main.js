@@ -145,7 +145,10 @@ let permanentState = {
     totalMoneySpent: 0,
     darkMode: false,
     maxActiveEffects: 1,
-    totalProgress: 0
+    totalProgress: 0,
+    notifications: {
+        sweetSpot: true
+    }
 };
 
 let coin = {
@@ -1519,6 +1522,22 @@ function updateState(dt){
 
     if(state.autoSacrifice){
         autoSacrifice(dt);
+    }
+
+    if(permanentState.notifications.sweetSpot && ((people.bob.amount > 60000) || (people.alice.amount > 60000))){
+      createRandomEvent({
+            chance: null,
+            name: `Too Many Clones`,
+            buttonText: `Good for them, I guess`,
+            flavorText: `Now that you're making a lot of clones, a word of advice. There is a sweet spot, a 
+            perfect range where you have enough clones to really get a lot done, but not so many that it starts getting messy. 
+            In that range you may see huge productivity boosts. Past that, there's too many clones in the kitchen.`,
+            effectText: `Remember: Stay in the sweet spot. Go past that and efficiency could drop drastically.`,
+            effect(){
+                permanentState.notifications.sweetSpot = false;
+            }
+        },);
+        eventModal.showModal();
     }
 
     if(totalTime - lastSave >= 5000){
