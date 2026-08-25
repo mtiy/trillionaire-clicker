@@ -130,7 +130,9 @@ const thoughts = [
 let permanentState = {
     baseClickStrength: 0.01,
     bobValue: 0.01,
+    bobMax: 100000,
     aliceValue: 0.01,
+    aliceMax: 100000,
     autocloneMultiplier: 1,
     clickBoostMax: 1,
     hiringFairMax: 10,
@@ -684,10 +686,10 @@ function initializeGame(){
     ];
 
     people = {
-        bob: new Person(0, "Bob", 1, 0.50, 0.70),
-        alice: new Person(0, "Alice", 1, 300, 400),
-        intern: new Person(permanentState.internValue, "Interns", 0, 2e5, null),
-        misterE: new Person(0, "Mr E", permanentState.misterEValue, 50e6, null)
+        bob: new Person(0, "Bob", 1, 0.50, 0.70, 0, permanentState.bobMax),
+        alice: new Person(0, "Alice", 1, 300, 400, 0, permanentState.aliceMax),
+        intern: new Person(permanentState.internValue, "Interns", 0, 2e5, null, null, null),
+        misterE: new Person(0, "Mr E", permanentState.misterEValue, 50e6, null, null, null)
     };
 
     activateButtonsStatus = [0,0,0,0,0];
@@ -1026,12 +1028,14 @@ document.getElementById("restartNo").addEventListener("click", () => {
 });
 
 class Person{
-    constructor(value, name, amount, cost, cloneCost){
+    constructor(value, name, amount, cost, cloneCost, negAmount, maxAmount){
         this.value = value;
         this.name = name;
         this.amount = amount;
         this.cost = cost;
         this.cloneCost = cloneCost;
+        this.negAmount = negAmount;
+        this.maxAmount = maxAmount;
     }
 
     createElement(text){
@@ -1046,7 +1050,7 @@ class Person{
         let cb = document.createElement("button");
         cb.textContent = buttonText;
         cb.addEventListener("click", () => {
-            this.amount += state.clickStrength*100;
+            this.clone(state.clickStrength*100);
         });
         cb.classList.add("clone-button");
         return cb;
@@ -1067,6 +1071,29 @@ class Person{
         });
         if(state.events.bloodMoon.used) sb.disabled = true;
         return sb;
+    }
+
+    clone(toIncrease){
+        if((this.amount + toIncrease) < this.maxAmount){
+            this.amount += toIncrease;
+            return;
+        }
+        if(this.amount === this.maxAmount){
+            this.negAmount += toIncrease;
+            console.log(this.negAmount);
+            return;
+        }
+        if((this.amount + toIncrease) >= this.maxAmount){
+            let diff = this.amount + toIncrease - this.maxAmount;
+            this.amount = this.maxAmount;
+            this.negAmount += diff;
+        }
+    }
+
+    calculate(){
+        let total = this.amount - this.negAmount;
+        if(total < 0) total = 0;
+        return total * this.value;
     }
 }
 
@@ -1095,11 +1122,17 @@ function autoSacrifice(dt){
     if(activateButtons.sacrifice.timer + dt >= 1000){
         activateButtons.sacrifice.timer = 0;
         let total = 0;
-        if((people.bob.amount - permanentState.sacrificeAmount) >= 1){
+        if((people.bob.negAmount - permanentState.sacrificeAmount) >= 0){
+            people.bob.negAmount -= permanentState.sacrificeAmount;
+            total += permanentState.sacrificeAmount;
+        } else if((people.bob.amount - permanentState.sacrificeAmount) >= 1){
             people.bob.amount -= permanentState.sacrificeAmount;
             total += permanentState.sacrificeAmount;
         }
-        if((people.alice.amount - permanentState.sacrificeAmount) >= 1){
+        if((people.alice.negAmount - permanentState.sacrificeAmount) >= 0){
+            people.alice.negAmount -= permanentState.sacrificeAmount;
+            total += permanentState.sacrificeAmount;
+        } else if((people.alice.amount - permanentState.sacrificeAmount) >= 1){
             people.alice.amount -= permanentState.sacrificeAmount;
             total += permanentState.sacrificeAmount;
         }
@@ -1108,13 +1141,33 @@ function autoSacrifice(dt){
             total += permanentState.sacrificeAmount;
         }
         people.bob.amount = Math.round(people.bob.amount);
+        people.bob.negAmount = Math.round(people.bob.negAmount);
         people.alice.amount = Math.round(people.alice.amount);
+        people.alice.negAmount = Math.round(people.alice.negAmount);
         people.intern.amount = Math.round(people.intern.amount);
         people.misterE.value += (total * 1e-4);
     } else {
         activateButtons.sacrifice.timer += dt;
     }
 
+}
+
+// When clone amount is at a given max, add to a negative amount instead
+function clone(toIncrease, amount, maxAmount, negAmount){
+    if(amount === maxAmount){
+        negAmount += toIncrease;
+        return;
+    }
+    if((amount + toIncrease) >= maxAmount){
+        let diff = amount + toIncrease - maxAmount;
+        amount = maxAmount;
+        negAmount += diff;
+        return;
+    }
+    if((amount + toIncrease) < maxAmount){
+        amount += toIncrease;
+        return;
+    }
 }
 
 // Formatting money - if money is above cap, format with scientific notation
@@ -1152,7 +1205,7 @@ function updateDisplay(){
     });
 
     if(state.unlocks.hasBob){
-        document.getElementById(people.bob.name).textContent = `${formatPeople(people.bob.amount, 1e6)} ${people.bob.name}s: Spending ${formatMoney(people.bob.value*people.bob.amount, 10000)} per second`;
+        document.getElementById(people.bob.name).textContent = `${formatPeople(people.bob.amount + people.bob.negAmount, 1e6)} ${people.bob.name}s: Spending ${formatMoney(people.bob.calculate(), 10000)} per second`;
     }
 
     if(state.unlocks.hasAlice){
@@ -1384,7 +1437,7 @@ function updateState(dt){
     }
 
     // Equation determining how much our money decreases per tick
-    let decreaseAmount = people.bob.amount * people.bob.value * (1 + people.alice.amount * people.alice.value) * Math.E**(people.misterE.value);
+    let decreaseAmount = people.bob.calculate() * (1 + people.alice.amount * people.alice.value) * Math.E**(people.misterE.value);
 
     // Check if game is over
     if(state.money - decreaseAmount/1000*dt <= 0){
@@ -1477,7 +1530,7 @@ class ActivateButton{
 }
 
 function autoclone(ac, dt){
-    people.bob.amount += ac.multiplier * ac.bobAmount/1000 * dt * (1+people.intern.amount*people.intern.value);
+    people.bob.clone(ac.multiplier * ac.bobAmount/1000 * dt * (1+people.intern.amount*people.intern.value))
     people.alice.amount += ac.multiplier * ac.aliceAmount/1000 * dt * (1+people.intern.amount*people.intern.value);
 }
 
