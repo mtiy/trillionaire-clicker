@@ -130,11 +130,11 @@ const thoughts = [
 let permanentState = {
     baseClickStrength: 0.01,
     bobValue: 0.01,
-    bobMax: 100000,
-    bobLow: 90000,
+    bobMax: 1000,
+    bobLow: 900,
     aliceValue: 0.01,
-    aliceMax: 100000,
-    aliceLow: 90000,
+    aliceMax: 1000,
+    aliceLow: 900,
     autocloneMultiplier: 1,
     clickBoostMax: 1,
     hiringFairMax: 10,
@@ -145,10 +145,7 @@ let permanentState = {
     totalMoneySpent: 0,
     darkMode: false,
     maxActiveEffects: 1,
-    totalProgress: 0,
-    notifications: {
-        sweetSpot: true
-    }
+    totalProgress: 0
 };
 
 let coin = {
@@ -636,6 +633,7 @@ function initializeGame(){
         money: permanentState.money,
         spentMoney: 0,
         clickStrength: permanentState.baseClickStrength,
+        clickBoostMax: permanentState.clickBoostMax,
         paused: false,
         hardMode: false,
         unlocks: {
@@ -657,9 +655,11 @@ function initializeGame(){
             dontClick: false
         },
         killInterns: false,
+        hiringFairMax: permanentState.hiringFairMax,
         clickPercent: 0,
         roundButtons: false,
         activeEffects: 0,
+        maxActiveEffects: permanentState.maxActiveEffects,
         autoSacrifice: false
     };
 
@@ -1056,6 +1056,7 @@ class Person{
     createCloneButton(buttonText){
         let cb = document.createElement("button");
         cb.textContent = buttonText;
+        cb.id = this.name + "Button";
         cb.addEventListener("click", () => {
             this.clone(state.clickStrength*100);
         });
@@ -1111,7 +1112,7 @@ class Person{
         let total = this.amount - this.negAmount;
         if(total < 0) total = 0;
         if(this.lowAmount <= (this.amount + this.negAmount) && (this.amount + this.negAmount) <= this.maxAmount){
-            total *= 10;
+            total *= 100;
             if(!this.sweetSpot){
                 this.sweetSpot = true;
                 document.getElementById(this.name).classList.add("clone-sweet-spot");
@@ -1179,24 +1180,6 @@ function autoSacrifice(dt){
         activateButtons.sacrifice.timer += dt;
     }
 
-}
-
-// When clone amount is at a given max, add to a negative amount instead
-function clone(toIncrease, amount, maxAmount, negAmount){
-    if(amount === maxAmount){
-        negAmount += toIncrease;
-        return;
-    }
-    if((amount + toIncrease) >= maxAmount){
-        let diff = amount + toIncrease - maxAmount;
-        amount = maxAmount;
-        negAmount += diff;
-        return;
-    }
-    if((amount + toIncrease) < maxAmount){
-        amount += toIncrease;
-        return;
-    }
 }
 
 // Formatting money - if money is above cap, format with scientific notation
@@ -1296,8 +1279,8 @@ function updateState(dt){
                 this.textContent = "Activate";
                 state.activeEffects--;
             } else {
-                if(state.activeEffects >= permanentState.maxActiveEffects){
-                    console.log(`Cannot have more than ${permanentState.maxActiveEffects} effects active at once`);
+                if(state.activeEffects >= state.maxActiveEffects){
+                    console.log(`Cannot have more than ${state.maxActiveEffects} effects active at once`);
                     return;
                 }
                 state.activeEffects++;
@@ -1327,8 +1310,8 @@ function updateState(dt){
                 this.textContent = "Activate";
                 state.activeEffects--;
             } else {
-                if(state.activeEffects >= permanentState.maxActiveEffects){
-                    console.log(`Cannot have more than ${permanentState.maxActiveEffects} effects active at once`);
+                if(state.activeEffects >= state.maxActiveEffects){
+                    console.log(`Cannot have more than ${state.maxActiveEffects} effects active at once`);
                     return;
                 }
                 state.activeEffects++;
@@ -1348,8 +1331,8 @@ function updateState(dt){
                 this.textContent = "Activate";
                 state.activeEffects--;
             } else {
-                if(state.activeEffects >= permanentState.maxActiveEffects){
-                    console.log(`Cannot have more than ${permanentState.maxActiveEffects} effects active at once`);
+                if(state.activeEffects >= state.maxActiveEffects){
+                    console.log(`Cannot have more than ${state.maxActiveEffects} effects active at once`);
                     return;
                 }
                 state.activeEffects++;
@@ -1390,8 +1373,8 @@ function updateState(dt){
                 this.textContent = "Activate";
                 state.activeEffects--;
             } else {
-                if(state.activeEffects >= permanentState.maxActiveEffects){
-                    console.log(`Cannot have more than ${permanentState.maxActiveEffects} effects active at once`);
+                if(state.activeEffects >= state.maxActiveEffects){
+                    console.log(`Cannot have more than ${state.maxActiveEffects} effects active at once`);
                     return;
                 }
                 state.activeEffects++;
@@ -1429,7 +1412,7 @@ function updateState(dt){
                 this.textContent = "Activate";
                 state.activeEffects--;
             } else {
-                if(state.activeEffects >= permanentState.maxActiveEffects){
+                if(state.activeEffects >= state.maxActiveEffects){
                     console.log(`NOPE`);
                     return;
                 }
@@ -1524,22 +1507,6 @@ function updateState(dt){
         autoSacrifice(dt);
     }
 
-    if(permanentState.notifications.sweetSpot && ((people.bob.amount > 60000) || (people.alice.amount > 60000))){
-      createRandomEvent({
-            chance: null,
-            name: `Too Many Clones`,
-            buttonText: `Good for them, I guess`,
-            flavorText: `Now that you're making a lot of clones, a word of advice. There is a sweet spot, a 
-            perfect range where you have enough clones to really get a lot done, but not so many that it starts getting messy. 
-            In that range you may see huge productivity boosts. Past that, there's too many clones in the kitchen.`,
-            effectText: `Remember: Stay in the sweet spot. Go past that and efficiency could drop drastically.`,
-            effect(){
-                permanentState.notifications.sweetSpot = false;
-            }
-        },);
-        eventModal.showModal();
-    }
-
     if(totalTime - lastSave >= 5000){
         saveGame();
         lastSave = totalTime;
@@ -1579,16 +1546,17 @@ function autoclone(ac, dt){
     people.alice.clone(ac.multiplier * ac.aliceAmount/1000 * dt * (1+people.intern.amount*people.intern.value));
 }
 
+// Increase rate of hiring interns to a maximum over 1 minute
 function hireInterns(dt){
     hiringFair.timer += dt;
-    if(hiringFair.amount >= permanentState.hiringFairMax){
+    if(hiringFair.amount >= state.hiringFairMax){
         document.getElementById("hiringFairText").textContent = `${hiringFair.amount} interns / s - max`;
     }
-    if(hiringFair.amount < permanentState.hiringFairMax && (hiringFair.timer >= 6000)){
-        hiringFair.amount += permanentState.hiringFairMax/10;
+    if(hiringFair.amount < state.hiringFairMax && (hiringFair.timer >= 6000)){
+        hiringFair.amount += state.hiringFairMax/10;
         hiringFair.timer = 0;
-        if(hiringFair.amount >= permanentState.hiringFairMax){
-            hiringFair.amount = permanentState.hiringFairMax;
+        if(hiringFair.amount >= state.hiringFairMax){
+            hiringFair.amount = state.hiringFairMax;
             document.getElementById("hiringFairText").textContent = `${hiringFair.amount} interns / s - max`;
         } else {
             document.getElementById("hiringFairText").textContent = `${hiringFair.amount} interns / s`;
@@ -1597,12 +1565,12 @@ function hireInterns(dt){
     people.intern.amount += hiringFair.amount/1000 * dt;
 }
 
+// Boost click strength to a maximum over 1 minute
 function boostClickPower(dt){
-    if(state.clickStrength <= permanentState.clickBoostMax){
-        // Evenly divide the maximum we want to reach over 10 minutes
-        state.clickStrength += (permanentState.clickBoostMax/600000) * dt;
-        if(state.clickStrength > permanentState.clickBoostMax){
-            state.clickStrength = permanentState.clickBoostMax;
+    if(state.clickStrength < state.clickBoostMax){
+        state.clickStrength += (state.clickBoostMax/60000) * dt;
+        if(state.clickStrength > state.clickBoostMax){
+            state.clickStrength = state.clickBoostMax;
         }
         document.getElementById("clickStrengthText").textContent = `Click Strength: ${state.clickStrength.toFixed(2)} / ${permanentState.clickBoostMax}`;
     }
@@ -1813,17 +1781,6 @@ setInterval(function gameLoop(){
     }
 },timeStep);
 
-// Playtesting functions: devMode unlocks everything, trueReset clears all variables including permanent upgrades
-function devMode(){
-    people.bob.cost = 0, people.bob.cloneCost = 0;
-    people.alice.cost = 0, people.alice.cloneCost = 0;
-    people.intern.cost = 0;
-    people.misterE.cost = 0;
-    activateButtons.clickUpgrade.cost = 0;
-    activateButtons.autocloneBob.cost = 0;
-    activateButtons.hiring.cost = 0;
-}
-
 // Save and Load functions using JSON and localStorage
 function saveGame(){
     localStorage.removeItem("trillionaireClickerSave");
@@ -1975,3 +1932,50 @@ function calculateOfflineProgress(seconds){
     state.paused = false;
 }
 
+// Dev Tools
+const changes = document.querySelectorAll(".dev-input");
+const stateButtons = document.querySelectorAll(".dev-perm-button");
+const devButtons = document.querySelectorAll(".dev-button");
+devButtons[0].addEventListener("click", devMode);
+devButtons[1].addEventListener("click", () => {
+    localStorage.removeItem("trillionaireClickerSave");
+    window.location.reload();
+});
+devButtons[2].addEventListener("click", () => {
+    updateDisplay();
+    hideScreen([peopleDisplay, clickDisplay, messageLog, moneyButton, moneyContainer], `display`);
+    handleEndgameRewards();
+});
+devButtons[3].addEventListener("click", () => {
+    permanentState.baseClickStrength = parseFloat(changes[0].value);
+    permanentState.clickBoostMax = parseFloat(changes[1].value);
+    permanentState.bobValue = parseFloat(changes[3].value);
+    permanentState.aliceValue = parseFloat(changes[5].value);
+    permanentState.internValue = parseFloat(changes[7].value);
+    permanentState.autocloneMultiplier = parseFloat(changes[8].value);
+    permanentState.maxActiveEffects = parseFloat(changes[9].value);
+    permanentState.hiringFairMax = parseFloat(changes[10].value);
+});
+
+// unlocks everything
+function devMode(){
+    people.bob.cost = 0, people.bob.cloneCost = 0;
+    people.alice.cost = 0, people.alice.cloneCost = 0;
+    people.intern.cost = 0;
+    people.misterE.cost = 0;
+    activateButtons.clickUpgrade.cost = 0;
+    activateButtons.autocloneBob.cost = 0;
+    activateButtons.hiring.cost = 0;
+}
+
+stateButtons[0].addEventListener("click", () => {state.clickStrength = parseFloat(changes[0].value)});
+stateButtons[1].addEventListener("click", () => {state.clickBoostMax = parseFloat(changes[1].value)});
+stateButtons[2].addEventListener("click", () => {people.bob.amount = parseFloat(changes[2].value)});
+stateButtons[3].addEventListener("click", () => {people.bob.value = parseFloat(changes[3].value)});
+stateButtons[4].addEventListener("click", () => {people.alice.amount = parseFloat(changes[4].value)});
+stateButtons[5].addEventListener("click", () => {people.alice.value = parseFloat(changes[5].value)});
+stateButtons[6].addEventListener("click", () => {people.intern.amount = parseFloat(changes[6].value)});
+stateButtons[7].addEventListener("click", () => {people.intern.value = parseFloat(changes[7].value)});
+stateButtons[8].addEventListener("click", () => {autocloneObject.multiplier = parseFloat(changes[8].value)});
+stateButtons[9].addEventListener("click", () => {state.maxActiveEffects = parseFloat(changes[9].value)});
+stateButtons[10].addEventListener("click", () => {state.hiringFairMax = parseFloat(changes[10].value)});

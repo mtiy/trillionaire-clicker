@@ -119,8 +119,8 @@ li {
 }
 
 .clone-sweet-spot {
-    background-color: rgb(68, 60, 40);
-    color: rgb(89, 207, 78);
+    background: linear-gradient(to right, red, orange, white);
+    color: black;
 }
 
 .click-upgrade-container {
@@ -365,6 +365,51 @@ li {
 
 .stats-line {
     margin: 0.5em 0.5em 0 0;
+}
+
+.dev-commands {
+    margin-top: 3em;
+    width: 50em;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.dev-text {
+    font-size: 1.2em;
+    margin-bottom: 1em;
+}
+
+.dev-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+}
+
+.dev-button {
+    max-width: 10em;
+    padding: 0.5em;
+    font-size: 1.2em;
+}
+
+.dev-perm-state {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    margin-top: 1em;
+    margin-bottom: 5em;
+}
+
+.dev-perm-option {
+    display: flex;
+    justify-content: space-between;
+    max-width: 20em;
+    margin-top: 1em;
+}
+
+.dev-perm-button {
+    all: revert;
+}
+
+.dev-perm-button:hover {
+    all: revert;
 }
 
 @media (hover: hover){
