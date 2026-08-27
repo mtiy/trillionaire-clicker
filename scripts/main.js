@@ -1033,13 +1033,13 @@ document.getElementById("restartNo").addEventListener("click", () => {
 });
 
 class Person{
-    constructor(value, name, amount, cost, cloneCost, negAmount, maxAmount, lowAmount){
+    constructor(value, name, amount, cost, cloneCost, overMax, maxAmount, lowAmount){
         this.value = value;
         this.name = name;
         this.amount = amount;
         this.cost = cost;
         this.cloneCost = cloneCost;
-        this.negAmount = negAmount;
+        this.overMax = overMax;
         this.maxAmount = maxAmount;
         this.lowAmount = lowAmount;
         this.sweetSpot = false;
@@ -1091,27 +1091,28 @@ class Person{
         return sb;
     }
 
+    // Handles increases to clone count for Bob/Alice
     clone(toIncrease){
         if((this.amount + toIncrease) < this.maxAmount){
             this.amount += toIncrease;
             return;
         }
         if(this.amount === this.maxAmount){
-            this.negAmount += toIncrease;
+            this.overMax += toIncrease;
             return;
         }
         if((this.amount + toIncrease) >= this.maxAmount){
             let diff = this.amount + toIncrease - this.maxAmount;
             this.amount = this.maxAmount;
-            this.negAmount += diff;
+            this.overMax += diff;
             return;
         }
     }
 
+    // Up to a fixed maximum clones produce at 100% efficiency, 10% after max, with a sweet spot that has x100 boost
     calculate(){
-        let total = this.amount - this.negAmount;
-        if(total < 0) total = 0;
-        if(this.lowAmount <= (this.amount + this.negAmount) && (this.amount + this.negAmount) <= this.maxAmount){
+        let total = this.amount * this.value + this.overMax * this.value * 0.1;
+        if(this.lowAmount <= (this.amount + this.overMax) && (this.amount + this.overMax) <= this.maxAmount){
             total *= 100;
             if(!this.sweetSpot){
                 this.sweetSpot = true;
@@ -1123,7 +1124,7 @@ class Person{
                 document.getElementById(this.name).classList.remove("clone-sweet-spot");
             }
         }
-        return total * this.value;
+        return total;
     }
 }
 
@@ -1217,11 +1218,11 @@ function updateDisplay(){
     });
 
     if(state.unlocks.hasBob){
-        document.getElementById(people.bob.name).textContent = `${formatPeople(people.bob.amount + people.bob.negAmount, 1e6)} ${people.bob.name}s: Spending ${formatMoney(people.bob.calculate(), 10000)} per second`;
+        document.getElementById(people.bob.name).textContent = `${formatPeople(people.bob.amount + people.bob.overMax, 1e6)} ${people.bob.name}s: Spending ${formatMoney(people.bob.calculate(), 10000)} per second`;
     }
 
     if(state.unlocks.hasAlice){
-        document.getElementById(people.alice.name).textContent = `${formatPeople(people.alice.amount + people.alice.negAmount, 1e6)} ${people.alice.name}s: Multiply spending by ${(1+people.alice.calculate()).toFixed(2)}`;
+        document.getElementById(people.alice.name).textContent = `${formatPeople(people.alice.amount + people.alice.overMax, 1e6)} ${people.alice.name}s: Multiply spending by ${(1+people.alice.calculate()).toFixed(2)}`;
     }
 
     if(state.unlocks.hasInterns){
