@@ -1,0 +1,4 @@
+/* 
+Storing large amounts of text that we can draw from throughout the game.
+Current main focus is 
+*/
