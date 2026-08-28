@@ -693,12 +693,12 @@ function initializeGame(){
     activateButtons = {
         clickUpgrade: {
             removeUpgrade(){
-                state.clickStrength = permanentState.baseClickStrength;
                 activateButtons.clickUpgrade.activated = false;
-                document.getElementById("clickStrengthText").textContent = `Boost Click Strength`;
+                activateButtons.clickUpgrade.decrease = true;
             },
             cost: 75,
-            activated: false
+            activated: false,
+            decrease: false
         },
         autocloneBob: {
             removeUpgrade(){
@@ -1177,6 +1177,7 @@ function updateState(dt){
                 }
                 state.activeEffects++;
                 activateButtons.clickUpgrade.activated = true;
+                activateButtons.clickUpgrade.decrease = false;
                 this.classList.add("activate-button-activated");
                 activateButtonsStatus[0] = 1;
                 this.textContent = "Deactivate";
@@ -1360,6 +1361,10 @@ function updateState(dt){
         boostClickPower(dt);
     }
 
+    if(activateButtons.clickUpgrade.decrease){
+        boostClickPower(-dt);
+    }
+
     if(state.events.dontClick){
         linearClickStrengthIncrease(dt);
     }
@@ -1429,11 +1434,16 @@ function hireInterns(dt){
 }
 
 function boostClickPower(dt){
-    if(state.clickStrength <= permanentState.clickBoostMax){
-        // Evenly divide the maximum we want to reach over 10 minutes
-        state.clickStrength += (permanentState.clickBoostMax/600000) * dt;
+    if(state.clickStrength <= permanentState.clickBoostMax && state.clickStrength >= permanentState.baseClickStrength){
+        // Evenly divide the maximum we want to reach over 5 minutes
+        state.clickStrength += (permanentState.clickBoostMax/(5*60*1000)) * dt;
         if(state.clickStrength > permanentState.clickBoostMax){
             state.clickStrength = permanentState.clickBoostMax;
+        }
+        if(state.clickStrength < permanentState.baseClickStrength){
+            activateButtons.clickUpgrade.decrease = false;
+            state.clickStrength = permanentState.baseClickStrength;
+            document.getElementById("clickStrengthText").textContent = `Boost Click Strength`;
         }
         document.getElementById("clickStrengthText").textContent = `Click Strength: ${state.clickStrength.toFixed(2)} / ${permanentState.clickBoostMax}`;
     }
@@ -1707,6 +1717,8 @@ function loadGame(save){
         activateButtons[ab].cost = save.activateButtons[ab].cost;
         activateButtons[ab].activated = save.activateButtons[ab].activated;
     }
+
+    activateButtons.clickUpgrade.decrease = save.activateButtons.clickUpgrade.decrease;
 
     autocloneObject = save.autocloneObject;
     autocloneObject.unlockedAutocloning = false;
