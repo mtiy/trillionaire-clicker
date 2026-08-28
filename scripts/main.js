@@ -959,7 +959,7 @@ class Person{
         cb.textContent = buttonText;
         cb.id = this.name + "Button";
         cb.addEventListener("click", () => {
-            this.clone(state.clickStrength*100);
+            this.clone(state.clickStrength);
         });
         cb.classList.add("clone-button");
         return cb;
