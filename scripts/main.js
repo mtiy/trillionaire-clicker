@@ -128,11 +128,11 @@ const thoughts = [
 ];
 
 let permanentState = {
-    baseClickStrength: 0.01,
+    baseClickStrength: 1,
     bobValue: 0.01,
     aliceValue: 0.01,
     autocloneMultiplier: 1,
-    clickBoostMax: 1,
+    clickBoostMax: 100,
     hiringFairMax: 10,
     internValue: 0.01,
     misterEValue: 1e-5,
@@ -182,7 +182,7 @@ const upgrades = {
     tier1: {
         clickStrength: {
             available: true,
-            increase: 0.99,
+            increase: 49,
             buttonText: `Click Strength`,
             displayText: `Click Strength is the value you get per click. It determines how much you spend, clone, and hire.`,
             createText(){
@@ -346,43 +346,6 @@ const upgrades = {
                 this.available = false;
             }
         },
-        flipCoin: {
-            available: true,
-            increase: null,
-            buttonText: `A Stranger`,
-            displayText: `You wonder what this stranger's name is. Why is he here? Why are you here?`,
-            createText(){
-                let t = document.createElement("p");
-                t.textContent = this.displayText;
-                return t;
-            },
-            applyEffect(choice){
-                let result = coin.flip();
-                if(result === choice){
-                    multiplyAllPermanentStats(2);
-                } else {
-                    multiplyAllPermanentStats(0.5);
-                }
-                coin.animate();
-                setTimeout(() => {
-                    coin.createResultText(result === choice);
-                    endGame();
-                }, 7000);
-            }
-        },
-        theJob: {
-            available: true,
-            increase: null,
-            buttonText: `The Job`,
-            displayText: `Consistency and discipline are the foundation of society. You understand this. It just takes a little bit, done every day, to make a difference.`,
-            createText(){
-                let t = createUpgradeText(this.displayText, `Slight increase to all stats`, `(Except Mr. E value)`);
-                return t;
-            },
-            applyEffect(){
-                addAllPermanentStats(2, 10);
-            }
-        },
         increaseMoney: {
             available: true,
             increase: 1e85,
@@ -400,43 +363,6 @@ const upgrades = {
         }
     },
     tier3: {
-        flipCoin: {
-            available: true,
-            increase: null,
-            buttonText: `A Stranger`,
-            displayText: `You wonder what this stranger's name is. Why is he here? Why are you here?`,
-            createText(){
-                let t = document.createElement("p");
-                t.textContent = this.displayText;
-                return t;
-            },
-            applyEffect(choice){
-                let result = coin.flip();
-                if(result === choice){
-                    multiplyAllPermanentStats(2);
-                } else {
-                    multiplyAllPermanentStats(0.5);
-                }
-                coin.animate();
-                setTimeout(() => {
-                    coin.createResultText(result === choice);
-                    endGame();
-                }, 7000);
-            }
-        },
-        theJob: {
-            available: true,
-            increase: null,
-            buttonText: `The Job`,
-            displayText: `Consistency and discipline are the foundation of society. You understand this. It just takes a little bit, done every day, to make a difference.`,
-            createText(){
-                let t = createUpgradeText(this.displayText, `Slight increase to all stats`, `(Except Mr. E value)`);
-                return t;
-            },
-            applyEffect(){
-                addAllPermanentStats(20, 50);
-            }
-        },
         increaseMoney: {
             available: true,
             increase: 1e200,
@@ -466,7 +392,7 @@ function multiplyAllPermanentStats(value){
 }
 
 function addAllPermanentStats(decimal, integer){
-    permanentState.baseClickStrength += decimal;
+    permanentState.baseClickStrength += integer;
     permanentState.bobValue += decimal;
     permanentState.aliceValue += decimal;
     permanentState.autocloneMultiplier += integer;
@@ -1034,7 +960,7 @@ class Person{
         let cb = document.createElement("button");
         cb.textContent = buttonText;
         cb.addEventListener("click", () => {
-            this.amount += state.clickStrength*100;
+            this.amount += state.clickStrength;
         });
         cb.classList.add("clone-button");
         return cb;
@@ -1445,7 +1371,7 @@ function boostClickPower(dt){
             state.clickStrength = permanentState.baseClickStrength;
             document.getElementById("clickStrengthText").textContent = `Boost Click Strength`;
         }
-        document.getElementById("clickStrengthText").textContent = `Click Strength: ${state.clickStrength.toFixed(2)} / ${permanentState.clickBoostMax}`;
+        document.getElementById("clickStrengthText").textContent = `Click Strength: ${state.clickStrength.toFixed()} / ${permanentState.clickBoostMax}`;
     }
 }
 
@@ -1473,8 +1399,8 @@ function compoundInterest(p, r, t){
 // Happens when you click the big spend button
 function manualSpend(){
     if(state.paused) state.paused = false;
-    state.money -= (state.clickStrength + state.money*state.clickPercent);
-    state.spentMoney += (state.clickStrength + state.money*state.clickPercent);
+    state.money -= (state.clickStrength/100 + state.money*state.clickPercent);
+    state.spentMoney += (state.clickStrength/100 + state.money*state.clickPercent);
     updateDisplay();
 }
 
