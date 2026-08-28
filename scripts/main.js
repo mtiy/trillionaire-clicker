@@ -136,7 +136,8 @@ let permanentState = {
     aliceMax: 1000,
     aliceLow: 900,
     autocloneMultiplier: 1,
-    clickBoostMax: 100,
+    autocloneMax: 10,
+    clickBoostMax: 10,
     hiringFairMax: 10,
     internValue: 0.01,
     misterEValue: 1e-5,
@@ -553,16 +554,54 @@ function getStats(stats){
     return c;
 }
 
+let tutorial = {
+    level: 0
+};
+
 // For the first run, guide the player to each unlock and display goals at the top
 function tutorialGoals(){
-    if(state.money === 1e12){
+    if(tutorial.level === 0){
         extraNotifications.textContent = `Current Goal: Press Spend`;
+        if(state.money < 1e12) tutorial.level = 1;
     }
-    if(!state.unlocks.hasBobClone && state.money < 1e12){
+    if(tutorial.level === 1){
         extraNotifications.textContent = `Current Goal: Spend $1`;
+        if(state.unlocks.hasBobClone) tutorial.level = 2;
     }
-    if(state.unlocks.hasBobClone && people.bob.amount < 10){
-        extraNotifications.textContent = `Current Goal: Clone Bob ${people.bob.amount}/10`;
+    if(tutorial.level === 2){
+        extraNotifications.textContent = `Current Goal: Clone Bobs ${people.bob.amount.toFixed()}/10`;
+        if(!tutorial.bobMessage){
+            let msg = createMessage(`You can clone Bob to speed things up.`);
+            messageLog.prepend(msg);
+            tutorial.bobMessage = true;
+        }
+        if(people.bob.amount >= 10) tutorial.level = 3;
+    }
+    if(tutorial.level === 3){
+        extraNotifications.textContent = `Current Goal: Clone Bobs ${people.bob.amount.toFixed()}/100`;
+        if(!tutorial.clickBoostMessage){
+            let msg = createMessage(`Your clicks aren't doing much, are they? Boosting your click strength should help.`);
+            messageLog.prepend(msg);
+            tutorial.clickBoostMessage = true;
+        }
+        if(people.bob.amount >= 100) tutorial.level = 4;
+    }
+    if(tutorial.level === 4){
+        extraNotifications.textContent = `Current Goal: Clone Alices ${people.alice.amount.toFixed()}/100`;
+        if(!tutorial.aliceMessage){
+            let msg = createMessage("This is Alice. She multiplies Bob's spending. Of course, you can clone her too.");
+            messageLog.prepend(msg);
+            tutorial.aliceMessage = true;
+        }
+        if(people.alice.amount >= 100) tutorial.level = 5;
+    }
+    if(tutorial.level === 5){
+        extraNotifications.textContent = `Current Goal: Total Clones ${(people.bob.amount + people.alice.amount).toFixed()}/2500`;
+        if(!tutorial.autocloneMessage){
+            let msg = createMessage(`You find a dusty piece of equipment in the basement. Faded letters on its side say "Autocloner".`);
+            messageLog.prepend(msg);
+            tutorial.autocloneMessage = true;
+        }
     }
 }
 
@@ -604,6 +643,7 @@ function initializeGame(){
         },
         killInterns: false,
         hiringFairMax: permanentState.hiringFairMax,
+        autocloneMax: permanentState.autocloneMax,
         clickPercent: 0,
         roundButtons: false,
         activeEffects: 0,
@@ -627,28 +667,32 @@ function initializeGame(){
             removeUpgrade(){
                 activateButtons.clickUpgrade.activated = false;
                 activateButtons.clickUpgrade.decrease = true;
+                activateButtons.clickUpgrade.timer = 0;
             },
-            cost: 75,
+            cost: 10,
+            timer: 0,
             activated: false,
             decrease: false
         },
         autocloneBob: {
             removeUpgrade(){
-                autocloneObject.bobAmount = 0;
                 autocloneObject.autocloneBobActivated = false;
                 activateButtons.autocloneBob.activated = false;
+                activateButtons.autocloneBob.decrease = true;
             },
-            cost: 20000,
-            activated: false
+            cost: 100,
+            activated: false,
+            decrease: false
         },
         autocloneAlice: {
             removeUpgrade(){
-                autocloneObject.aliceAmount = 0;
                 autocloneObject.autocloneAliceActivated = false;
                 activateButtons.autocloneAlice.activated = false;
+                activateButtons.autocloneAlice.decrease = true;
             },
-            cost: 20000,
-            activated: false
+            cost: 100,
+            activated: false,
+            decrease: false
         },
         hiring: {
             removeUpgrade(){
@@ -683,8 +727,10 @@ function initializeGame(){
         unlockedAutocloning: false,
         autocloneBobActivated: false,
         autocloneAliceActivated: false,
-        bobAmount: 0,
-        aliceAmount: 0,
+        bobAmount: 1,
+        bobTimer: 0,
+        aliceTimer: 0,
+        aliceAmount: 1,
         multiplier: permanentState.autocloneMultiplier
     };
 
@@ -1137,14 +1183,14 @@ function updateState(dt){
         }
     }
 
-    if(!state.unlocks.hasAlice && round(state.spentMoney) >= people.alice.cost){
+    if(!state.unlocks.hasAlice && people.bob.amount >= 100){
         people.alice.value = permanentState.aliceValue;
         peopleDisplay.append(people.alice.createElement(`${people.alice.name}: Multiply spending by ${1 + people.alice.value*people.alice.amount}`));
         state.unlocks.hasAlice = true;
         addMobileNotification(mobilePeopleButton);
     }
 
-    if(!state.unlocks.hasAliceClone && round(state.spentMoney) >= people.alice.cloneCost){
+    if(!state.unlocks.hasAliceClone && people.bob.amount >= 100){
         peopleDisplay.append(people.alice.createCloneButton("Clone"));
         state.unlocks.hasAliceClone = true;
         addMobileNotification(mobilePeopleButton);
@@ -1153,7 +1199,7 @@ function updateState(dt){
         }
     }
 
-    if(!state.unlocks.unlockedClickBoost && round(state.spentMoney) >= activateButtons.clickUpgrade.cost){
+    if(!state.unlocks.unlockedClickBoost && people.bob.amount >= activateButtons.clickUpgrade.cost){
         let clickBoost = new ActivateButton("Boost Click Strength", "clickUpgrade", function() {
             if(activateButtons.clickUpgrade.activated){
                 activateButtons.clickUpgrade.removeUpgrade();
@@ -1172,6 +1218,7 @@ function updateState(dt){
                 this.classList.add("activate-button-activated");
                 activateButtonsStatus[0] = 1;
                 this.textContent = "Deactivate";
+                document.getElementById("clickStrengthText").textContent = `Click Strength: ${state.clickStrength.toFixed()} / ${state.clickBoostMax}`;
             }
         });
         clickDisplay.append(clickBoost.createButton("clickStrengthText"));
@@ -1180,10 +1227,11 @@ function updateState(dt){
         if(activateButtonsStatus[0]){
             document.getElementById("clickUpgrade").classList.add("activate-button-activated");
             document.getElementById("clickUpgrade").textContent = "Deactivate";
+            document.getElementById("clickStrengthText").textContent = `Click Strength: ${state.clickStrength.toFixed()} / ${state.clickBoostMax}`;
         }
     }
 
-    if(!autocloneObject.unlockedAutocloning && round(state.spentMoney) >= activateButtons.autocloneBob.cost){
+    if(!autocloneObject.unlockedAutocloning && people.alice.amount >= 100){
         autocloneObject.unlockedAutocloning = true;
 
         let autoBob = new ActivateButton("Autoclone Bobs", "autocloneBob", function(){
@@ -1201,10 +1249,10 @@ function updateState(dt){
                 state.activeEffects++;
                 activateButtons.autocloneBob.activated = true;
                 autocloneObject.autocloneBobActivated = true;
-                autocloneObject.bobAmount++;
                 this.classList.add("activate-button-activated");
                 activateButtonsStatus[1] = 1;
                 this.textContent = "Deactivate";
+                document.getElementById("autocloneBobText").textContent = `${autocloneObject.bobAmount} Bobs / s`;
             }
         });
         let autoAlice = new ActivateButton("Autoclone Alices", "autocloneAlice", function(){
@@ -1222,10 +1270,10 @@ function updateState(dt){
                 state.activeEffects++;
                 activateButtons.autocloneAlice.activated = true;
                 autocloneObject.autocloneAliceActivated = true;
-                autocloneObject.aliceAmount++;
                 this.classList.add("activate-button-activated");
                 activateButtonsStatus[2] = 1;
                 this.textContent = "Deactivate";
+                document.getElementById("autocloneAliceText").textContent = `${autocloneObject.aliceAmount} Alices / s`;
             }
         });
         clickDisplay.append(autoBob.createButton("autocloneBobText"), autoAlice.createButton("autocloneAliceText"));
@@ -1233,10 +1281,12 @@ function updateState(dt){
         if(activateButtonsStatus[1]){
             document.getElementById("autocloneBob").classList.add("activate-button-activated");
             document.getElementById("autocloneBob").textContent = "Deactivate";
+            document.getElementById("autocloneBobText").textContent = `${autocloneObject.bobAmount} Bobs / s`;
         }
         if(activateButtonsStatus[2]){
             document.getElementById("autocloneAlice").classList.add("activate-button-activated");
             document.getElementById("autocloneAlice").textContent = "Deactivate";
+            document.getElementById("autocloneAliceText").textContent = `${autocloneObject.aliceAmount} Alices / s`;
         }
     }
 
@@ -1358,14 +1408,25 @@ function updateState(dt){
     }
 
     decreaseMoney(decreaseAmount/1000 * dt);
-
     // Add interest if hard mode is active
     if(state.hardMode){
         state.money = compoundInterest(state.money, 0.05, dt/1000/25);
     }
 
-    if(autocloneObject.autocloneBobActivated || autocloneObject.autocloneAliceActivated){
-        autoclone(autocloneObject, dt);
+    if(activateButtons.autocloneBob.activated){
+        autocloneBob(dt, 1);
+    }
+
+    if(activateButtons.autocloneBob.decrease){
+        autocloneBob(dt, -1)
+    }
+
+    if(activateButtons.autocloneAlice.activated){
+        autocloneAlice(dt, 1);
+    }
+
+    if(activateButtons.autocloneAlice.decrease){
+        autocloneAlice(dt, -1);
     }
 
     if(hiringFair.activated){
@@ -1373,11 +1434,11 @@ function updateState(dt){
     }
 
     if(activateButtons.clickUpgrade.activated){
-        boostClickPower(dt);
+        boostClickPower(dt, 1);
     }
 
     if(activateButtons.clickUpgrade.decrease){
-        boostClickPower(-dt);
+        boostClickPower(dt, -1);
     }
 
     if(state.events.dontClick){
@@ -1433,9 +1494,48 @@ class ActivateButton{
     }
 }
 
-function autoclone(ac, dt){
-    people.bob.clone(ac.multiplier * ac.bobAmount/1000 * dt * (1+people.intern.amount*people.intern.value))
-    people.alice.clone(ac.multiplier * ac.aliceAmount/1000 * dt * (1+people.intern.amount*people.intern.value));
+function autocloneBob(dt, sign){
+    autocloneObject.bobTimer += dt;
+    if(autocloneObject.bobAmount >= state.autocloneMax){
+        document.getElementById("autocloneBobText").textContent = `${autocloneObject.bobAmount} Bobs / s - max`;
+    }
+    if(autocloneObject.bobAmount < state.autocloneMax && autocloneObject.bobAmount >= 1 && (autocloneObject.bobTimer >= 6000)){
+        autocloneObject.bobAmount += state.autocloneMax/10*sign;
+        autocloneObject.bobTimer = 0;
+        if(autocloneObject.bobAmount >= state.autocloneMax){
+            autocloneObject.bobAmount = state.autocloneMax;
+        }
+        if(autocloneObject.bobAmount < 1){
+            activateButtons.autocloneBob.decrease = false;
+            autocloneObject.bobAmount = 1;
+            document.getElementById("autocloneBobText").textContent = `Autoclone Bobs`;
+            return;
+        }
+        document.getElementById("autocloneBobText").textContent = `${autocloneObject.bobAmount} Bobs / s`;
+    }
+    people.bob.clone(autocloneObject.bobAmount/1000 * dt * (1+people.intern.amount*people.intern.value));
+}
+
+function autocloneAlice(dt, sign){
+    autocloneObject.aliceTimer += dt;
+    if(autocloneObject.aliceAmount >= state.autocloneMax){
+        document.getElementById("autocloneAliceText").textContent = `${autocloneObject.aliceAmount} Alices / s - max`;
+    }
+    if(autocloneObject.aliceAmount < state.autocloneMax && autocloneObject.aliceAmount >= 1 && (autocloneObject.aliceTimer >= 6000)){
+        autocloneObject.aliceAmount += state.autocloneMax/10*sign;
+        autocloneObject.aliceTimer = 0;
+        if(autocloneObject.aliceAmount > state.autocloneMax){
+            autocloneObject.aliceAmount = state.autocloneMax;
+        }
+        if(autocloneObject.aliceAmount < 1){
+            activateButtons.autocloneAlice.decrease = false;
+            autocloneObject.aliceAmount = 1;
+            document.getElementById("autocloneAliceText").textContent = `Autoclone Alices`;
+            return;
+        }
+        document.getElementById("autocloneAliceText").textContent = `${autocloneObject.aliceAmount} Alices / s`;
+    }
+    people.alice.clone(autocloneObject.aliceAmount/1000 * dt * (1+people.intern.amount*people.intern.value));
 }
 
 // Increase rate of hiring interns to a maximum over 1 minute
@@ -1458,19 +1558,21 @@ function hireInterns(dt){
 }
 
 // Boost click strength to a maximum over 1 minute
-function boostClickPower(dt){
-    if(state.clickStrength <= permanentState.clickBoostMax && state.clickStrength >= permanentState.baseClickStrength){
-        // Evenly divide the maximum we want to reach over 5 minutes
-        state.clickStrength += (permanentState.clickBoostMax/(5*60*1000)) * dt;
-        if(state.clickStrength > permanentState.clickBoostMax){
-            state.clickStrength = permanentState.clickBoostMax;
+function boostClickPower(dt, sign){
+    activateButtons.clickUpgrade.timer += dt;
+    if(state.clickStrength <= state.clickBoostMax && state.clickStrength >= permanentState.baseClickStrength && (activateButtons.clickUpgrade.timer >= 6000)){
+        state.clickStrength += state.clickBoostMax/10*sign;
+        activateButtons.clickUpgrade.timer = 0;
+        if(state.clickStrength > state.clickBoostMax){
+            state.clickStrength = state.clickBoostMax;
         }
         if(state.clickStrength < permanentState.baseClickStrength){
             activateButtons.clickUpgrade.decrease = false;
             state.clickStrength = permanentState.baseClickStrength;
             document.getElementById("clickStrengthText").textContent = `Boost Click Strength`;
+            return;
         }
-        document.getElementById("clickStrengthText").textContent = `Click Strength: ${state.clickStrength.toFixed()} / ${permanentState.clickBoostMax}`;
+        document.getElementById("clickStrengthText").textContent = `Click Strength: ${state.clickStrength.toFixed()} / ${state.clickBoostMax}`;
     }
 }
 
@@ -1703,7 +1805,8 @@ function saveGame(){
         tier1upgrades: tier1upgrades,
         tier2upgrades: tier2upgrades,
         tierLevel: upgrades.tierLevel,
-        statsButton: statsScreenButton.hidden
+        statsButton: statsScreenButton.hidden,
+        tutorial: tutorial
     }
 
     localStorage.setItem("trillionaireClickerSave", JSON.stringify(save));
@@ -1719,10 +1822,11 @@ function loadGame(save){
     let tier1upgrades = save.tier1upgrades;
     let tier2upgrades = save.tier2upgrades;
     let tierLevel = save.tierLevel;
+    tutorial = save.tutorial;
 
     people = {
-        bob: new Person(save.people.bob.value, save.people.bob.name, save.people.bob.amount, save.people.bob.cost, save.people.bob.cloneCost),
-        alice: new Person(save.people.alice.value, save.people.alice.name, save.people.alice.amount, save.people.alice.cost, save.people.alice.cloneCost),
+        bob: new Person(save.people.bob.value, save.people.bob.name, save.people.bob.amount, save.people.bob.cost, save.people.bob.cloneCost, save.people.bob.overMax, save.people.bob.maxAmount, save.people.bob.lowAmount),
+        alice: new Person(save.people.alice.value, save.people.alice.name, save.people.alice.amount, save.people.alice.cost, save.people.alice.cloneCost, save.people.alice.overMax, save.people.alice.maxAmount, save.people.alice.lowAmount),
         intern: new Person(save.people.intern.value, save.people.intern.name, save.people.intern.amount, save.people.intern.cost, save.people.intern.cloneCost),
         misterE: new Person(save.people.misterE.value, save.people.misterE.name, save.people.misterE.amount, save.people.misterE.cost, save.people.misterE.cloneCost)
     };
@@ -1733,6 +1837,8 @@ function loadGame(save){
     }
 
     activateButtons.clickUpgrade.decrease = save.activateButtons.clickUpgrade.decrease;
+    activateButtons.autocloneBob.decrease = save.activateButtons.autocloneBob.decrease;
+    activateButtons.autocloneAlice.decrease = save.activateButtons.autocloneAlice.decrease;
 
     autocloneObject = save.autocloneObject;
     autocloneObject.unlockedAutocloning = false;
