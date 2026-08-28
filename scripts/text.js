@@ -5,16 +5,11 @@ Can also store upgrade/endgame texts, thoughts, and just general walls of text t
 */
 
 const firstRunMessages = [
-        {condition: 0.01, text: "Spent a penny"},
-        {condition: 0.05, text: "You have spent one nickel"},
-        {condition: 0.10, text: "Now a dime"},
-        {condition: 0.25, text: "A whole quarter"},
-        {condition: 0.30, text: "Wow, this is getting kind of tiring, huh?"},
-        {condition: 0.40, text: "Let's find someone to spend this for you"},
-        {condition: 0.50, text: "This is Bob. He can spend money for you automatically."},
-        {condition: 0.60, text: "He's not very fast though"},
-        {condition: 0.70, text: "Luckily, we can clone him"},
-        {condition: 1, text: "You've spent 1 dollar"},
+        {condition: 0.01, text: "This is Bob. He can spend money for you automatically."},
+        {condition: 0.3, text: "Wow, this is gonna take forever."},
+        {condition: 0.4, text: "But you know, life can be pretty fast."},
+        {condition: 0.5, text: "It's important to slow down once in a while. Smell the roses."},
+        {condition: 1, text: "Or you can clone Bob to speed this up."},
         {condition: 3, text: "Some advice when it comes to clones."},
         {condition: 5, text: "There is a maximum number of clones that you can be 100% efficient with."},
         {condition: 10, text: "Past the max you get diminishing returns. Too many clones in the kitchen."},

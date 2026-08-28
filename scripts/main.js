@@ -553,6 +553,28 @@ function getStats(stats){
     return c;
 }
 
+// For the first run, guide the player to each unlock and display goals at the top
+function tutorialGoals(){
+    if(state.money === 1e12){
+        extraNotifications.textContent = `Current Goal: Press Spend`;
+    }
+    if(!state.unlocks.hasBobClone && state.money < 1e12){
+        extraNotifications.textContent = `Current Goal: Spend $1`;
+    }
+    if(state.unlocks.hasBobClone && people.bob.amount < 10){
+        extraNotifications.textContent = `Current Goal: Clone Bob ${people.bob.amount}/10`;
+    }
+}
+
+// Creates a message element to be appended to the message log
+function createMessage(text){
+    let m = document.createElement("div");
+    m.textContent = text;
+    m.classList.add("message");
+    m.classList.add("fade-in");
+    return m;
+}
+
 // Initialize all states and conditions for the purpose of starting a new game
 function initializeGame(){
     state = {
@@ -592,7 +614,7 @@ function initializeGame(){
     messages = firstRunMessages;
 
     people = {
-        bob: new Person(0, "Bob", 1, 0.50, 0.70, 0, permanentState.bobMax, permanentState.bobLow),
+        bob: new Person(0, "Bob", 1, 0.01, 1, 0, permanentState.bobMax, permanentState.bobLow),
         alice: new Person(0, "Alice", 1, 300, 400, 0, permanentState.aliceMax, permanentState.aliceLow),
         intern: new Person(permanentState.internValue, "Interns", 0, 2e5),
         misterE: new Person(0, "Mr E", permanentState.misterEValue, 50e6)
@@ -668,7 +690,7 @@ function initializeGame(){
 
     firstRandomEvents = [
         {
-            chance: 0.15,
+            chance: 0.25,
             name: `Clone Uprising`,
             buttonText: `Good for them, I guess`,
             flavorText: `The clones of Bob and Alice have unionized, citing extreme work hours as the
@@ -680,7 +702,7 @@ function initializeGame(){
             }
         },
         {
-            chance: 0.2,
+            chance: 0.25,
             name: `Ambitious Interns`,
             buttonText: `Hm. Okay`,
             flavorText: `Your interns are ruthless. Cutthroat. They don't sleep. Don't eat. All they do is work.
@@ -693,31 +715,7 @@ function initializeGame(){
             }
         },
         {
-            chance: 0.2,
-            name: `Economy Collapses!`,
-            buttonText: `Hooray!`,
-            flavorText: `The stock market crashes. Billionaires everywhere cry out in agony. Their time has come.`,
-            effectText: ``,
-            effect(){
-                let amount = state.spentMoney*100*Math.random();
-                decreaseMoney(amount);
-                this.effectText = `Money decreased by ${formatMoney(amount, 1e12)}`;
-            }
-        },
-        {
-            chance: 0.2,
-            name: `Money Everywhere!`,
-            buttonText: `Noooo`,
-            flavorText: `Business is booming! The money printers are working overtime to keep up. More money!`,
-            effectText: ``,
-            effect(){
-                let amount = state.spentMoney * 0.3 * Math.random();
-                state.money += amount;
-                this.effectText = `Money increased by ${formatMoney(amount, 1e12)}`;
-            }
-        },
-        {
-            chance: 0.2,
+            chance: 0.25,
             name: `Age of Automation`,
             buttonText: `Even clicking this button is hard`,
             flavorText: `We have all come to appreciate the benefits of the autocloner. Our hands, once cramped, can now
@@ -734,7 +732,7 @@ function initializeGame(){
             }
         },
         {
-            chance: 0.05,
+            chance: 0.25,
             name: `The Invisible Hand`,
             buttonText: `I love clicking buttons!`,
             flavorText: `You've really got the hang of this clicking business. Guiding money in the right direction - your pockets. No one does it like the boss.`,
@@ -749,7 +747,7 @@ function initializeGame(){
 
     secondRandomEvents = [
         {
-            chance: 0.25,
+            chance: 0.33,
             name: `Blood Moon`,
             buttonText: `Spooky`,
             flavorText: `The Blood Moon rises over the waste land. Mr. E walks outside and stares up at it. He must offer a good sacrifice.`,
@@ -759,20 +757,7 @@ function initializeGame(){
             }
         },
         {
-            chance: 0.25,
-            name: `Copy of a Copy of a`,
-            buttonText: `I'm sure it's fine!`,
-            flavorText: `An intern comes up with a bright idea. Instead of cloning the original Bob and Alice, why not just clone the clones? 
-            The new clones come out a little...weird...but we can make a lot of them!`,
-            effectText: `Autocloner production x10, Bob and Alice efficiency decreased by 90%`,
-            effect(){
-                people.bob.value *= 0.10;
-                people.alice.value *= 0.10;
-                autocloneObject.multiplier *= 10;
-            }
-        },
-        {
-            chance: 0.25,
+            chance: 0.34,
             name: `Aesthetic Era`,
             buttonText: `Ran out of ideas for events, huh?`,
             flavorText: `You need a change. A new look. A new you. So you pop over to the store. A few minutes later 
@@ -787,7 +772,7 @@ function initializeGame(){
             }
         },
         {
-            chance: 0.25,
+            chance: 0.33,
             name: `Don't Click`,
             buttonText: `Does this count? That's not fair!`,
             flavorText: `Here's a thought: what if you don't click. What if the longer you don't click, the stronger your next click is? I knew you'd love it.`,
@@ -833,7 +818,6 @@ function resetDisplay(){
 
     document.querySelector(".endgame-upgrades-text").textContent = ``;
     endgameUpgrades.hidden = true;
-    extraNotifications.style.visibility = `hidden`;
 
     gameOverDisplay.hidden = true;
     gameOverDisplay.classList.remove("fade-in");
@@ -1104,10 +1088,7 @@ function formatPeople(amount, cap){
 function updateDisplay(){
     moneyDisplay.textContent = formatMoney(state.money, 1e12);
     if(messages.length > 0 && round(state.spentMoney) >= messages[0].condition){
-        let m = document.createElement("div");
-        m.textContent = messages[0].text;
-        m.classList.add("message");
-        m.classList.add("fade-in");
+        let m = createMessage(messages[0].text);
         messages.shift();
         messageLog.prepend(m);
         addMobileNotification(mobileHomeButton);
@@ -1119,7 +1100,7 @@ function updateDisplay(){
     });
 
     if(state.unlocks.hasBob){
-        document.getElementById(people.bob.name).textContent = `${formatPeople(people.bob.amount + people.bob.overMax, 1e4)}/${formatPeople(people.bob.maxAmount, 1e4)} ${people.bob.name}s: Spending ${formatMoney(people.bob.calculate(), 10000)} per second`;
+        document.getElementById(people.bob.name).textContent = `${formatPeople(people.bob.amount + people.bob.overMax, 1e4)} ${people.bob.name}s: Spending ${formatMoney(people.bob.calculate(), 10000)} per second`;
     }
 
     if(state.unlocks.hasAlice){
@@ -1420,6 +1401,10 @@ function updateState(dt){
         console.log("Game Saved!");
     }
 
+    if(permanentState.totalProgress === 0){
+        tutorialGoals();
+    }
+
     updateDisplay();
 }
 
@@ -1502,7 +1487,7 @@ window.addEventListener("click", () => {
 });
 
 function round(s){
-    return Math.round(s*100)/100;
+    return Math.floor(s*100)/100;
 }
 
 // Continuous compound interest - p: principal, r: rate (years), t: time step (years)
@@ -1768,8 +1753,6 @@ function loadGame(save){
         statsScreenButton.hidden = false;
         mobileStatsButton.hidden = false;
     } 
-
-    if(state.events.dontClick) extraNotifications.style.visibility = `visible`;
 
     for(i in tier1upgrades){
         upgrades.tier1[i].available = tier1upgrades[i]; 
