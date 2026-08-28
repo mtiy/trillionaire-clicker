@@ -1248,6 +1248,7 @@ function updateState(dt){
                 }
                 state.activeEffects++;
                 activateButtons.autocloneBob.activated = true;
+                activateButtons.autocloneBob.decrease = false;
                 autocloneObject.autocloneBobActivated = true;
                 this.classList.add("activate-button-activated");
                 activateButtonsStatus[1] = 1;
@@ -1269,6 +1270,7 @@ function updateState(dt){
                 }
                 state.activeEffects++;
                 activateButtons.autocloneAlice.activated = true;
+                activateButtons.autocloneAlice.decrease = false;
                 autocloneObject.autocloneAliceActivated = true;
                 this.classList.add("activate-button-activated");
                 activateButtonsStatus[2] = 1;
@@ -1499,7 +1501,7 @@ function autocloneBob(dt, sign){
     if(autocloneObject.bobAmount >= state.autocloneMax){
         document.getElementById("autocloneBobText").textContent = `${autocloneObject.bobAmount} Bobs / s - max`;
     }
-    if(autocloneObject.bobAmount < state.autocloneMax && autocloneObject.bobAmount >= 1 && (autocloneObject.bobTimer >= 6000)){
+    if(autocloneObject.bobAmount <= state.autocloneMax && autocloneObject.bobAmount >= 1 && (autocloneObject.bobTimer >= 6000)){
         autocloneObject.bobAmount += state.autocloneMax/10*sign;
         autocloneObject.bobTimer = 0;
         if(autocloneObject.bobAmount >= state.autocloneMax){
@@ -1521,10 +1523,10 @@ function autocloneAlice(dt, sign){
     if(autocloneObject.aliceAmount >= state.autocloneMax){
         document.getElementById("autocloneAliceText").textContent = `${autocloneObject.aliceAmount} Alices / s - max`;
     }
-    if(autocloneObject.aliceAmount < state.autocloneMax && autocloneObject.aliceAmount >= 1 && (autocloneObject.aliceTimer >= 6000)){
+    if(autocloneObject.aliceAmount <= state.autocloneMax && autocloneObject.aliceAmount >= 1 && (autocloneObject.aliceTimer >= 6000)){
         autocloneObject.aliceAmount += state.autocloneMax/10*sign;
         autocloneObject.aliceTimer = 0;
-        if(autocloneObject.aliceAmount > state.autocloneMax){
+        if(autocloneObject.aliceAmount >= state.autocloneMax){
             autocloneObject.aliceAmount = state.autocloneMax;
         }
         if(autocloneObject.aliceAmount < 1){
