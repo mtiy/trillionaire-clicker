@@ -2067,50 +2067,50 @@ function calculateOfflineProgress(seconds){
     state.paused = false;
 }
 
-// Dev Tools
-const changes = document.querySelectorAll(".dev-input");
-const stateButtons = document.querySelectorAll(".dev-perm-button");
-const devButtons = document.querySelectorAll(".dev-button");
-devButtons[0].addEventListener("click", devMode);
-devButtons[1].addEventListener("click", () => {
-    localStorage.removeItem("trillionaireClickerSave");
-    window.location.reload();
-});
-devButtons[2].addEventListener("click", () => {
-    updateDisplay();
-    hideScreen([peopleDisplay, clickDisplay, messageLog, moneyButton, moneyContainer], `display`);
-    handleEndgameRewards();
-});
-devButtons[3].addEventListener("click", () => {
-    permanentState.baseClickStrength = parseFloat(changes[0].value);
-    permanentState.clickBoostMax = parseFloat(changes[1].value);
-    permanentState.bobValue = parseFloat(changes[3].value);
-    permanentState.aliceValue = parseFloat(changes[5].value);
-    permanentState.internValue = parseFloat(changes[7].value);
-    permanentState.autocloneMultiplier = parseFloat(changes[8].value);
-    permanentState.maxActiveEffects = parseFloat(changes[9].value);
-    permanentState.hiringFairMax = parseFloat(changes[10].value);
-});
+// // Dev Tools
+// const changes = document.querySelectorAll(".dev-input");
+// const stateButtons = document.querySelectorAll(".dev-perm-button");
+// const devButtons = document.querySelectorAll(".dev-button");
+// devButtons[0].addEventListener("click", devMode);
+// devButtons[1].addEventListener("click", () => {
+//     localStorage.removeItem("trillionaireClickerSave");
+//     window.location.reload();
+// });
+// devButtons[2].addEventListener("click", () => {
+//     updateDisplay();
+//     hideScreen([peopleDisplay, clickDisplay, messageLog, moneyButton, moneyContainer], `display`);
+//     handleEndgameRewards();
+// });
+// devButtons[3].addEventListener("click", () => {
+//     permanentState.baseClickStrength = parseFloat(changes[0].value);
+//     permanentState.clickBoostMax = parseFloat(changes[1].value);
+//     permanentState.bobValue = parseFloat(changes[3].value);
+//     permanentState.aliceValue = parseFloat(changes[5].value);
+//     permanentState.internValue = parseFloat(changes[7].value);
+//     permanentState.autocloneMultiplier = parseFloat(changes[8].value);
+//     permanentState.maxActiveEffects = parseFloat(changes[9].value);
+//     permanentState.hiringFairMax = parseFloat(changes[10].value);
+// });
 
-// unlocks everything
-function devMode(){
-    people.bob.cost = 0, people.bob.cloneCost = 0;
-    people.alice.cost = 0, people.alice.cloneCost = 0;
-    people.intern.cost = 0;
-    people.misterE.cost = 0;
-    activateButtons.clickUpgrade.cost = 0;
-    activateButtons.autocloneBob.cost = 0;
-    activateButtons.hiring.cost = 0;
-}
+// // unlocks everything
+// function devMode(){
+//     people.bob.cost = 0, people.bob.cloneCost = 0;
+//     people.alice.cost = 0, people.alice.cloneCost = 0;
+//     people.intern.cost = 0;
+//     people.misterE.cost = 0;
+//     activateButtons.clickUpgrade.cost = 0;
+//     activateButtons.autocloneBob.cost = 0;
+//     activateButtons.hiring.cost = 0;
+// }
 
-stateButtons[0].addEventListener("click", () => {state.clickStrength = parseFloat(changes[0].value)});
-stateButtons[1].addEventListener("click", () => {state.clickBoostMax = parseFloat(changes[1].value)});
-stateButtons[2].addEventListener("click", () => {people.bob.amount = parseFloat(changes[2].value)});
-stateButtons[3].addEventListener("click", () => {people.bob.value = parseFloat(changes[3].value)});
-stateButtons[4].addEventListener("click", () => {people.alice.amount = parseFloat(changes[4].value)});
-stateButtons[5].addEventListener("click", () => {people.alice.value = parseFloat(changes[5].value)});
-stateButtons[6].addEventListener("click", () => {people.intern.amount = parseFloat(changes[6].value)});
-stateButtons[7].addEventListener("click", () => {people.intern.value = parseFloat(changes[7].value)});
-stateButtons[8].addEventListener("click", () => {autocloneObject.multiplier = parseFloat(changes[8].value)});
-stateButtons[9].addEventListener("click", () => {state.maxActiveEffects = parseFloat(changes[9].value)});
-stateButtons[10].addEventListener("click", () => {state.hiringFairMax = parseFloat(changes[10].value)});
+// stateButtons[0].addEventListener("click", () => {state.clickStrength = parseFloat(changes[0].value)});
+// stateButtons[1].addEventListener("click", () => {state.clickBoostMax = parseFloat(changes[1].value)});
+// stateButtons[2].addEventListener("click", () => {people.bob.amount = parseFloat(changes[2].value)});
+// stateButtons[3].addEventListener("click", () => {people.bob.value = parseFloat(changes[3].value)});
+// stateButtons[4].addEventListener("click", () => {people.alice.amount = parseFloat(changes[4].value)});
+// stateButtons[5].addEventListener("click", () => {people.alice.value = parseFloat(changes[5].value)});
+// stateButtons[6].addEventListener("click", () => {people.intern.amount = parseFloat(changes[6].value)});
+// stateButtons[7].addEventListener("click", () => {people.intern.value = parseFloat(changes[7].value)});
+// stateButtons[8].addEventListener("click", () => {autocloneObject.multiplier = parseFloat(changes[8].value)});
+// stateButtons[9].addEventListener("click", () => {state.maxActiveEffects = parseFloat(changes[9].value)});
+// stateButtons[10].addEventListener("click", () => {state.hiringFairMax = parseFloat(changes[10].value)});
