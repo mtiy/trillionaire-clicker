@@ -106,6 +106,22 @@ li {
     font-size: 1.3rem;
 }
 
+.intern-button-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5em;
+}
+
+.intern-modal-button {
+    padding: 1em 0.5em;
+    font-size: 0.65em;
+}
+
+.intern-upgrade-heading {
+    margin-bottom: 1em;
+}
+
+
 .people-container {
     display: none;
     /* border: 2px solid black; */

@@ -7,6 +7,7 @@ let autocloneObject;
 let firstRandomEvents;
 let secondRandomEvents;
 let activateButtonsStatus;
+let internUpgrades;
 
 // Used for formatting our money
 const numberFormat1 = new Intl.NumberFormat("en-US", {style: "currency", currency: "USD"});
@@ -41,6 +42,8 @@ const statsScreenButton = document.getElementById("stats-screen");
 const mobileStatsButton = document.getElementById("mobile-stats-screen");
 const statsModal = document.getElementById("stats-modal");
 const extraNotifications = document.querySelector(".extra-notifications");
+const internUpgradeModal = document.getElementById("intern-upgrades-modal");
+const internUpgradeContainer = document.getElementById("intern-upgrades-buttons");
 
 // Mobile buttons, remove notification effect on click
 const mobileButtons = document.querySelectorAll(".mobile-button");
@@ -130,11 +133,11 @@ const thoughts = [
 let permanentState = {
     baseClickStrength: 1,
     bobValue: 0.01,
-    bobMax: 1000,
-    bobLow: 900,
+    bobMax: 5000,
+    bobLow: 4000,
     aliceValue: 0.01,
-    aliceMax: 1000,
-    aliceLow: 900,
+    aliceMax: 5000,
+    aliceLow: 4000,
     autocloneMultiplier: 1,
     autocloneMax: 10,
     clickBoostMax: 10,
@@ -561,15 +564,15 @@ let tutorial = {
 // For the first run, guide the player to each unlock and display goals at the top
 function tutorialGoals(){
     if(tutorial.level === 0){
-        extraNotifications.textContent = `Current Goal: Press Spend`;
+        extraNotifications.textContent = `Press Spend`;
         if(state.money < 1e12) tutorial.level = 1;
     }
     if(tutorial.level === 1){
-        extraNotifications.textContent = `Current Goal: Spend $1`;
+        extraNotifications.textContent = `Spend $1`;
         if(state.unlocks.hasBobClone) tutorial.level = 2;
     }
     if(tutorial.level === 2){
-        extraNotifications.textContent = `Current Goal: Clone Bobs ${people.bob.amount.toFixed()}/10`;
+        extraNotifications.textContent = `Clone Bobs ${formatPeople(people.bob.amount, 10000)}/10`;
         if(!tutorial.bobMessage){
             let msg = createMessage(`You can clone Bob to speed things up.`);
             messageLog.prepend(msg);
@@ -578,7 +581,7 @@ function tutorialGoals(){
         if(people.bob.amount >= 10) tutorial.level = 3;
     }
     if(tutorial.level === 3){
-        extraNotifications.textContent = `Current Goal: Clone Bobs ${people.bob.amount.toFixed()}/100`;
+        extraNotifications.textContent = `Clone Bobs ${formatPeople(people.bob.amount, 10000)}/100`;
         if(!tutorial.clickBoostMessage){
             let msg = createMessage(`Your clicks aren't doing much, are they? Boosting your click strength should help.`);
             messageLog.prepend(msg);
@@ -587,7 +590,7 @@ function tutorialGoals(){
         if(people.bob.amount >= 100) tutorial.level = 4;
     }
     if(tutorial.level === 4){
-        extraNotifications.textContent = `Current Goal: Clone Alices ${people.alice.amount.toFixed()}/100`;
+        extraNotifications.textContent = `Clone Alices ${formatPeople(people.alice.amount, 10000)}/100`;
         if(!tutorial.aliceMessage){
             let msg = createMessage("This is Alice. She multiplies Bob's spending. Of course, you can clone her too.");
             messageLog.prepend(msg);
@@ -596,12 +599,25 @@ function tutorialGoals(){
         if(people.alice.amount >= 100) tutorial.level = 5;
     }
     if(tutorial.level === 5){
-        extraNotifications.textContent = `Current Goal: Total Clones ${(people.bob.amount + people.alice.amount).toFixed()}/2500`;
+        extraNotifications.textContent = `Total Clones ${formatPeople(people.bob.total() + people.alice.total(), 10000)}/2,500`;
         if(!tutorial.autocloneMessage){
             let msg = createMessage(`You find a dusty piece of equipment in the basement. Faded letters on its side say "Autocloner".`);
             messageLog.prepend(msg);
             tutorial.autocloneMessage = true;
         }
+        if((people.alice.total() + people.bob.total()) >= 2500) tutorial.level = 6;
+    }
+    if(tutorial.level === 6){
+        extraNotifications.textContent = `Reach the "Sweet Spot"`;
+        if(!tutorial.sweetSpotMessage){
+            let msg = createMessage(`You might have noticed a maximum for the clones. Go past that and efficiency drops dramatically. But right before the max is a SWEET SPOT, where you get a boost to productivity.`);
+            messageLog.prepend(msg);
+            tutorial.sweetSpotMessage = true;
+        }
+        if((people.bob.total() > people.bob.lowAmount) || (people.alice.total() > people.alice.lowAmount)) tutorial.level = 7;
+    }
+    if(tutorial.level === 7){
+        extraNotifications.textContent = `Assign interns to projects 5 times`;
     }
 }
 
@@ -620,6 +636,7 @@ function initializeGame(){
         money: permanentState.money,
         spentMoney: 0,
         clickStrength: permanentState.baseClickStrength,
+        baseClickStrength: permanentState.baseClickStrength,
         clickBoostMax: permanentState.clickBoostMax,
         paused: false,
         hardMode: false,
@@ -648,7 +665,8 @@ function initializeGame(){
         roundButtons: false,
         activeEffects: 0,
         maxActiveEffects: permanentState.maxActiveEffects,
-        autoSacrifice: false
+        autoSacrifice: false,
+        internModalOpen: false
     };
 
     messages = firstRunMessages;
@@ -830,6 +848,30 @@ function initializeGame(){
         }
     ];
 
+    internUpgrades = [
+        new InternUpgrade({amount: 0, base: 10, growth: 1.15}, {buttonId:`internCloneUpgrade`, title: `Coffee Run`, body: `+20% clone productivity`}, () => {
+            people.bob.value *= 1.2;
+            people.alice.value *= 1.2;
+        }),
+        new InternUpgrade({amount: 0, base: 10, growth: 1.17}, {buttonId: `internClickUpgrade`, title: `Company Gym`, body: `+1 click boost max`}, () => {
+            state.clickBoostMax += 1;
+        }),
+        new InternUpgrade({amount: 0, base: 10, growth: 1.14}, {buttonId: `internBobMaxUpgrade`, title: `Shoppers`, body: `+10% bob maximum`}, () => {
+            people.bob.maxAmount *= 1.1;
+            people.bob.lowAmount *= 1.1;
+            people.bob.addFromOverMax();
+            document.getElementById("BobButton").textContent = `Clone | Max: ${people.bob.maxAmount}`;
+        }),
+        new InternUpgrade({amount: 0, base: 10, growth: 1.14}, {buttonId: `internAliceMaxUpgrade`, title: `Analyze Spreadsheets`, body: `+10% alice maximum`}, () => {
+            people.alice.maxAmount *= 1.1;
+            people.bob.lowAmount *= 1.1;
+            people.alice.addFromOverMax();
+            document.getElementById("AliceButton").textContent = `Clone | Max: ${people.alice.maxAmount}`;
+        })
+    ];
+
+    createInternUpgrades(internUpgrades);
+
     moneyButton.addEventListener("click", manualSpend);
     moneyButton.textContent = `Spend`;
     
@@ -986,7 +1028,7 @@ class Person{
 
     createCloneButton(buttonText){
         let cb = document.createElement("button");
-        cb.textContent = buttonText;
+        cb.textContent = buttonText + ` | Max: ${formatPeople(this.maxAmount,1e5)}`;
         cb.id = this.name + "Button";
         cb.addEventListener("click", () => {
             this.clone(state.clickStrength);
@@ -1003,6 +1045,15 @@ class Person{
         });
         cb.classList.add("clone-button");
         return cb;
+    }
+
+    createAssignButton(buttonText){
+        let ab = createButton(buttonText, `clone-button`);
+        ab.addEventListener("click", () => {
+            internUpgradeModal.showModal();
+            state.internModalOpen = true;
+        });
+        return ab;
     }
 
     createSacrificeButton(buttonText){
@@ -1040,11 +1091,23 @@ class Person{
         }
     }
 
+    // In the case where we increase the max and had some overmax, move them over to amount
+    addFromOverMax(){
+        let diff = this.maxAmount - this.amount;
+        if(this.overMax >= diff){
+            this.overMax -= diff;
+            this.amount += diff;
+        } else {
+            this.amount += this.overMax;
+            this.overMax = 0;
+        }
+    }
+
     // Up to a fixed maximum clones produce at 100% efficiency, 10% after max, with a sweet spot that has x100 boost
     calculate(){
         let total = this.amount * this.value + this.overMax * this.value * 0.1;
         if(this.lowAmount <= (this.amount + this.overMax) && (this.amount + this.overMax) <= this.maxAmount){
-            total *= 100;
+            total *= 10;
             if(!this.sweetSpot){
                 this.sweetSpot = true;
                 document.getElementById(this.name).classList.add("clone-sweet-spot");
@@ -1057,6 +1120,60 @@ class Person{
         }
         return total;
     }
+
+    total(){
+        return this.amount + this.overMax;
+    }
+}
+
+// Handle intern upgrade data storage/calculations
+class InternUpgrade{
+    constructor(data={amount, base, growth}, textObj={buttonId, title, body}, effect){
+        this.amount = data.amount;
+        this.base = data.base;
+        this.growth = data.growth;
+        this.text = textObj;
+        this.cost = this.getNewCost();
+        this.effect = effect;
+    }
+
+    getNewCost(){
+        return Math.floor(this.base * (this.growth**this.amount));
+    }
+
+    createButton(){
+        let b = document.createElement("button");
+        b.classList.add("intern-modal-button");
+        b.id = this.text.buttonId;
+        let topText = document.createElement("div");
+        topText.textContent = this.text.title;
+        let middleText = document.createElement("div");
+        middleText.textContent = this.text.body;
+        let bottomText = document.createElement("div");
+        bottomText.textContent = `Cost: ` + this.cost;
+        bottomText.id = this.text.buttonId + `Cost`;
+        b.append(topText, middleText, bottomText);
+        return b;
+    }
+}
+
+// Fill out intern upgrade modal, called in initializeGame
+function createInternUpgrades(upgradeArray){
+    upgradeArray.forEach((upgrade) => {
+        let button = upgrade.createButton();
+        button.addEventListener("click", () => {
+            if(people.intern.amount >= upgrade.cost){
+                upgrade.effect();
+                people.intern.amount -= upgrade.cost;
+                upgrade.amount++;
+                upgrade.cost = upgrade.getNewCost();
+                document.getElementById(upgrade.text.buttonId + `Cost`).textContent = `Cost: ` + upgrade.cost;
+            } else {
+                console.log("Not Enough Interns");
+            }
+        });
+        internUpgradeContainer.append(button);
+    });
 }
 
 function decreaseMoney(amount){
@@ -1154,7 +1271,7 @@ function updateDisplay(){
     }
 
     if(state.unlocks.hasInterns){
-        document.getElementById(people.intern.name).textContent = `${formatPeople(people.intern.amount, 1e6)} ${people.intern.name}: Multiply autocloning by ${(1+people.intern.amount*people.intern.value).toFixed(2)}`;
+        document.getElementById(people.intern.name).textContent = `${formatPeople(people.intern.amount, 1e6)} ${people.intern.name}`;
     }
 
     if(state.events.dontClick){
@@ -1163,6 +1280,16 @@ function updateDisplay(){
 
     if(state.autoSacrifice){
         document.getElementById(people.misterE.name).textContent = `${people.misterE.name}: Multiply spending by e^${people.misterE.value.toFixed(4)}`;
+    }
+
+    if(state.internModalOpen){
+        for(i of internUpgrades){
+            if(people.intern.amount >= i.cost){
+                document.getElementById(i.text.buttonId).disabled = false;
+            } else {
+                document.getElementById(i.text.buttonId).disabled = true;
+            }
+        }
     }
 }
 
@@ -1292,9 +1419,10 @@ function updateState(dt){
         }
     }
 
-    if(!state.unlocks.hasInterns && round(state.spentMoney) >= people.intern.cost){
-        peopleDisplay.append(people.intern.createElement(`${people.intern.name}: Multiply autocloning by ${1+people.intern.value*people.intern.amount}`));
+    if(!state.unlocks.hasInterns && ((people.bob.total() > people.bob.lowAmount) || (people.alice.total() > people.alice.lowAmount))){
+        peopleDisplay.append(people.intern.createElement(`${people.intern.amount} ${people.intern.name}`));
         peopleDisplay.append(people.intern.createHireButton("Hire"));
+        peopleDisplay.append(people.intern.createAssignButton("Assign"));
         state.unlocks.hasInterns = true;
         addMobileNotification(mobilePeopleButton);
     }
@@ -1496,6 +1624,7 @@ class ActivateButton{
     }
 }
 
+// Two separate functions for bob/alice autocloning with decay, yeah it could prob be better whatever
 function autocloneBob(dt, sign){
     autocloneObject.bobTimer += dt;
     if(autocloneObject.bobAmount >= state.autocloneMax){
@@ -1562,15 +1691,15 @@ function hireInterns(dt){
 // Boost click strength to a maximum over 1 minute
 function boostClickPower(dt, sign){
     activateButtons.clickUpgrade.timer += dt;
-    if(state.clickStrength <= state.clickBoostMax && state.clickStrength >= permanentState.baseClickStrength && (activateButtons.clickUpgrade.timer >= 6000)){
+    if(state.clickStrength <= state.clickBoostMax && state.clickStrength >= state.baseClickStrength && (activateButtons.clickUpgrade.timer >= 6000)){
         state.clickStrength += state.clickBoostMax/10*sign;
         activateButtons.clickUpgrade.timer = 0;
         if(state.clickStrength > state.clickBoostMax){
             state.clickStrength = state.clickBoostMax;
         }
-        if(state.clickStrength < permanentState.baseClickStrength){
+        if(state.clickStrength < state.baseClickStrength){
             activateButtons.clickUpgrade.decrease = false;
-            state.clickStrength = permanentState.baseClickStrength;
+            state.clickStrength = state.baseClickStrength;
             document.getElementById("clickStrengthText").textContent = `Boost Click Strength`;
             return;
         }
