@@ -574,7 +574,7 @@ function tutorialGoals(){
     if(tutorial.level === 2){
         extraNotifications.textContent = `Clone Bobs ${formatPeople(people.bob.amount, 10000)}/10`;
         if(!tutorial.bobMessage){
-            let msg = createMessage(`You can clone Bob to speed things up.`);
+            let msg = createMessage(`Yeah, screw that. Clone Bob to spend money faster.`);
             messageLog.prepend(msg);
             tutorial.bobMessage = true;
         }
@@ -617,7 +617,18 @@ function tutorialGoals(){
         if((people.bob.total() > people.bob.lowAmount) || (people.alice.total() > people.alice.lowAmount)) tutorial.level = 7;
     }
     if(tutorial.level === 7){
-        extraNotifications.textContent = `Assign interns to projects 5 times`;
+        extraNotifications.textContent = `Assign interns to projects ${internUpgrades[0].amount + internUpgrades[1].amount + internUpgrades[2].amount + internUpgrades[3].amount}/5 times`;
+        if(!tutorial.internMessage){
+            let msg = createMessage(`Hire interns and assign them to projects to give them work experience. Oh, and to boost your stats.`);
+            messageLog.prepend(msg);
+            tutorial.internMessage = true;
+        }
+        if((internUpgrades[0].amount + internUpgrades[1].amount + internUpgrades[2].amount + internUpgrades[3].amount) >= 5){
+            tutorial.level === 8;
+        }
+    }
+    if(tutorial.level === 8){
+        extraNotifications.textContent = ``
     }
 }
 
@@ -849,22 +860,22 @@ function initializeGame(){
     ];
 
     internUpgrades = [
-        new InternUpgrade({amount: 0, base: 10, growth: 1.15}, {buttonId:`internCloneUpgrade`, title: `Coffee Run`, body: `+20% clone productivity`}, () => {
-            people.bob.value *= 1.2;
-            people.alice.value *= 1.2;
+        new InternUpgrade({amount: 0, base: 10, growth: 1.15}, {buttonId:`internCloneUpgrade`, title: `Coffee Run`, body: `+2% clone productivity`}, () => {
+            people.bob.value *= 1.02;
+            people.alice.value *= 1.02;
         }),
         new InternUpgrade({amount: 0, base: 10, growth: 1.17}, {buttonId: `internClickUpgrade`, title: `Company Gym`, body: `+1 click boost max`}, () => {
             state.clickBoostMax += 1;
         }),
-        new InternUpgrade({amount: 0, base: 10, growth: 1.14}, {buttonId: `internBobMaxUpgrade`, title: `Shoppers`, body: `+10% bob maximum`}, () => {
-            people.bob.maxAmount *= 1.1;
-            people.bob.lowAmount *= 1.1;
+        new InternUpgrade({amount: 0, base: 10, growth: 1.14}, {buttonId: `internBobMaxUpgrade`, title: `Shoppers`, body: `+1% bob maximum`}, () => {
+            people.bob.maxAmount = Math.floor(people.bob.maxAmount*1.01);
+            people.bob.lowAmount = Math.floor(people.bob.lowAMount*1.01);
             people.bob.addFromOverMax();
             document.getElementById("BobButton").textContent = `Clone | Max: ${people.bob.maxAmount}`;
         }),
-        new InternUpgrade({amount: 0, base: 10, growth: 1.14}, {buttonId: `internAliceMaxUpgrade`, title: `Analyze Spreadsheets`, body: `+10% alice maximum`}, () => {
-            people.alice.maxAmount *= 1.1;
-            people.bob.lowAmount *= 1.1;
+        new InternUpgrade({amount: 0, base: 10, growth: 1.14}, {buttonId: `internAliceMaxUpgrade`, title: `Analyze Spreadsheets`, body: `+1% alice maximum`}, () => {
+            people.alice.maxAmount = Math.floor(people.alice.maxAmount*1.01);
+            people.alice.lowAmount = Math.floor(people.alice.lowAmount*1.01);
             people.alice.addFromOverMax();
             document.getElementById("AliceButton").textContent = `Clone | Max: ${people.alice.maxAmount}`;
         })
@@ -898,6 +909,9 @@ function resetDisplay(){
     }
     while(endgameUpgradesButtons.firstChild){
         endgameUpgradesButtons.removeChild(endgameUpgradesButtons.firstChild);
+    }
+    while(internUpgradeContainer.firstChild){
+        internUpgradeContainer.removeChild(internUpgradeContainer.firstChild);
     }
 
     for(i of document.querySelectorAll("button")){
@@ -987,8 +1001,8 @@ function restartRun(){
     upgrades.tierLevel = `tier1`;
     upgrades.tier1.increaseMoney.available = true;
     upgrades.tier2.increaseMoney.available = true;
-    initializeGame();
     resetDisplay();
+    initializeGame();
     saveGame();
     startModal.showModal();
 }
@@ -1854,13 +1868,13 @@ function createReplayButtons(){
     let playAgainHard = createButton(`Play Again (Hard Mode)`, `end-game-button`);
 
     playAgain.addEventListener("click", () => {
-        initializeGame();
         resetDisplay();
+        initializeGame();
     });
 
     playAgainHard.addEventListener("click", () => {
-        initializeGame();
         resetDisplay();
+        initializeGame();
         state.paused = true;
         lastTime = null;
         state.hardMode = true;
@@ -1944,8 +1958,8 @@ function saveGame(){
 }
 
 function loadGame(save){
-    initializeGame();
     resetDisplay();
+    initializeGame();
 
     state = save.state;
     messages = save.messages;
@@ -2067,50 +2081,50 @@ function calculateOfflineProgress(seconds){
     state.paused = false;
 }
 
-// // Dev Tools
-// const changes = document.querySelectorAll(".dev-input");
-// const stateButtons = document.querySelectorAll(".dev-perm-button");
-// const devButtons = document.querySelectorAll(".dev-button");
-// devButtons[0].addEventListener("click", devMode);
-// devButtons[1].addEventListener("click", () => {
-//     localStorage.removeItem("trillionaireClickerSave");
-//     window.location.reload();
-// });
-// devButtons[2].addEventListener("click", () => {
-//     updateDisplay();
-//     hideScreen([peopleDisplay, clickDisplay, messageLog, moneyButton, moneyContainer], `display`);
-//     handleEndgameRewards();
-// });
-// devButtons[3].addEventListener("click", () => {
-//     permanentState.baseClickStrength = parseFloat(changes[0].value);
-//     permanentState.clickBoostMax = parseFloat(changes[1].value);
-//     permanentState.bobValue = parseFloat(changes[3].value);
-//     permanentState.aliceValue = parseFloat(changes[5].value);
-//     permanentState.internValue = parseFloat(changes[7].value);
-//     permanentState.autocloneMultiplier = parseFloat(changes[8].value);
-//     permanentState.maxActiveEffects = parseFloat(changes[9].value);
-//     permanentState.hiringFairMax = parseFloat(changes[10].value);
-// });
+// Dev Tools
+const changes = document.querySelectorAll(".dev-input");
+const stateButtons = document.querySelectorAll(".dev-perm-button");
+const devButtons = document.querySelectorAll(".dev-button");
+devButtons[0].addEventListener("click", devMode);
+devButtons[1].addEventListener("click", () => {
+    localStorage.removeItem("trillionaireClickerSave");
+    window.location.reload();
+});
+devButtons[2].addEventListener("click", () => {
+    updateDisplay();
+    hideScreen([peopleDisplay, clickDisplay, messageLog, moneyButton, moneyContainer], `display`);
+    handleEndgameRewards();
+});
+devButtons[3].addEventListener("click", () => {
+    permanentState.baseClickStrength = parseFloat(changes[0].value);
+    permanentState.clickBoostMax = parseFloat(changes[1].value);
+    permanentState.bobValue = parseFloat(changes[3].value);
+    permanentState.aliceValue = parseFloat(changes[5].value);
+    permanentState.internValue = parseFloat(changes[7].value);
+    permanentState.autocloneMultiplier = parseFloat(changes[8].value);
+    permanentState.maxActiveEffects = parseFloat(changes[9].value);
+    permanentState.hiringFairMax = parseFloat(changes[10].value);
+});
 
-// // unlocks everything
-// function devMode(){
-//     people.bob.cost = 0, people.bob.cloneCost = 0;
-//     people.alice.cost = 0, people.alice.cloneCost = 0;
-//     people.intern.cost = 0;
-//     people.misterE.cost = 0;
-//     activateButtons.clickUpgrade.cost = 0;
-//     activateButtons.autocloneBob.cost = 0;
-//     activateButtons.hiring.cost = 0;
-// }
+// unlocks everything
+function devMode(){
+    people.bob.cost = 0, people.bob.cloneCost = 0;
+    people.alice.cost = 0, people.alice.cloneCost = 0;
+    people.intern.cost = 0;
+    people.misterE.cost = 0;
+    activateButtons.clickUpgrade.cost = 0;
+    activateButtons.autocloneBob.cost = 0;
+    activateButtons.hiring.cost = 0;
+}
 
-// stateButtons[0].addEventListener("click", () => {state.clickStrength = parseFloat(changes[0].value)});
-// stateButtons[1].addEventListener("click", () => {state.clickBoostMax = parseFloat(changes[1].value)});
-// stateButtons[2].addEventListener("click", () => {people.bob.amount = parseFloat(changes[2].value)});
-// stateButtons[3].addEventListener("click", () => {people.bob.value = parseFloat(changes[3].value)});
-// stateButtons[4].addEventListener("click", () => {people.alice.amount = parseFloat(changes[4].value)});
-// stateButtons[5].addEventListener("click", () => {people.alice.value = parseFloat(changes[5].value)});
-// stateButtons[6].addEventListener("click", () => {people.intern.amount = parseFloat(changes[6].value)});
-// stateButtons[7].addEventListener("click", () => {people.intern.value = parseFloat(changes[7].value)});
-// stateButtons[8].addEventListener("click", () => {autocloneObject.multiplier = parseFloat(changes[8].value)});
-// stateButtons[9].addEventListener("click", () => {state.maxActiveEffects = parseFloat(changes[9].value)});
-// stateButtons[10].addEventListener("click", () => {state.hiringFairMax = parseFloat(changes[10].value)});
+stateButtons[0].addEventListener("click", () => {state.clickStrength = parseFloat(changes[0].value)});
+stateButtons[1].addEventListener("click", () => {state.clickBoostMax = parseFloat(changes[1].value)});
+stateButtons[2].addEventListener("click", () => {people.bob.amount = parseFloat(changes[2].value)});
+stateButtons[3].addEventListener("click", () => {people.bob.value = parseFloat(changes[3].value)});
+stateButtons[4].addEventListener("click", () => {people.alice.amount = parseFloat(changes[4].value)});
+stateButtons[5].addEventListener("click", () => {people.alice.value = parseFloat(changes[5].value)});
+stateButtons[6].addEventListener("click", () => {people.intern.amount = parseFloat(changes[6].value)});
+stateButtons[7].addEventListener("click", () => {people.intern.value = parseFloat(changes[7].value)});
+stateButtons[8].addEventListener("click", () => {autocloneObject.multiplier = parseFloat(changes[8].value)});
+stateButtons[9].addEventListener("click", () => {state.maxActiveEffects = parseFloat(changes[9].value)});
+stateButtons[10].addEventListener("click", () => {state.hiringFairMax = parseFloat(changes[10].value)});
