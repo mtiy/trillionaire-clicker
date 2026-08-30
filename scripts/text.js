@@ -10,3 +10,7 @@ const firstRunMessages = [
         {condition: 0.4, text: "But you know, life can be pretty fast."},
         {condition: 0.5, text: "It's important to slow down once in a while. Smell the roses."}
 ];
+
+const secondRunMessages = [
+        {condition: 0, text: `Now the real Trillionaire Clicker begins. Don't worry about unlocking all that stuff again. Just spend that money!`}
+];

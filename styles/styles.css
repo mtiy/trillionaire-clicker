@@ -255,14 +255,24 @@ li {
 }
 
 .endgame-coin-button {
-    background-color: rgb(1, 65, 1);
-    color: rgb(221, 203, 42);
+    background-color: rgb(4, 49, 18);
+    color: rgb(202, 202, 12);
     border-radius: 5em;
 }
 
-.endgame-job-button {
-    background-color: gray;
-    color: rgb(255, 255, 255);
+.endgame-factory-path {
+    background-color: rgb(78, 48, 9);
+    color: rgb(245, 183, 145);
+}
+
+.endgame-office-path {
+    background-color: rgb(199, 199, 197);
+    color: rgb(32, 32, 31);
+}
+
+.endgame-garden-path {
+    background-color: rgb(18, 105, 163);
+    color: rgb(212, 241, 243);
 }
 
 .thought-text {
@@ -531,6 +541,10 @@ li {
 
     .upgrade-text {
         margin-top: 0;
+    }
+
+    .endgame-upgrades-container{
+        min-width: 25em;
     }
 }
 
