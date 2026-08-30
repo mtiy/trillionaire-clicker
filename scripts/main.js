@@ -786,7 +786,7 @@ function initializeGame(){
     ];
 
     internUpgrades = [
-        new InternUpgrade({amount: 0, base: 10, growth: 1.15, max: 50}, {buttonId:`internCloneUpgrade`, title: `+2% clone productivity`, body: `0/100`}, () => {
+        new InternUpgrade({amount: 0, base: 10, growth: 1.15, max: 50}, {buttonId:`internCloneUpgrade`, title: `+2% clone productivity`, body: `0/50`}, () => {
             people.bob.value *= 1.02;
             people.alice.value *= 1.02;
         }),
@@ -805,13 +805,13 @@ function initializeGame(){
             people.alice.addFromOverMax();
             document.getElementById("AliceButton").textContent = `Clone | Max: ${people.alice.maxAmount}`;
         }),
-        new InternUpgrade({amount: 0, base: 25, growth: 1.17, max: 25}, {buttonId: `internJobFairUpgrade`, title: `+1 job fair max`, body: `0/50`}, () => {
+        new InternUpgrade({amount: 0, base: 25, growth: 1.17, max: 25}, {buttonId: `internJobFairUpgrade`, title: `+1 job fair max`, body: `0/25`}, () => {
             state.hiringFairMax++;
         }),
-        new InternUpgrade({amount: 0, base: 250, growth: 1.15, max: 10}, {buttonId: `internSacrificeUpgrade`, title: `+1 sacrifice/s`, body: `0/3`}, () => {
+        new InternUpgrade({amount: 0, base: 250, growth: 1.15, max: 10}, {buttonId: `internSacrificeUpgrade`, title: `+1 sacrifice/s`, body: `0/10`}, () => {
             state.sacrificeAmount++;
         })
-    ];
+    ];              
 
     createInternUpgrades(internUpgrades);
 
@@ -1170,15 +1170,15 @@ function autoSacrifice(dt){
     if(activateButtons.sacrifice.timer + dt >= 1000){
         activateButtons.sacrifice.timer = 0;
         let total = 0;
-        if((people.bob.negAmount - state.sacrificeAmount) >= 0){
-            people.bob.negAmount -= state.sacrificeAmount;
+        if((people.bob.overMax - state.sacrificeAmount) >= 0){
+            people.bob.overMax -= state.sacrificeAmount;
             total += state.sacrificeAmount;
         } else if((people.bob.amount - state.sacrificeAmount) >= 1){
             people.bob.amount -= state.sacrificeAmount;
             total += state.sacrificeAmount;
         }
-        if((people.alice.negAmount - state.sacrificeAmount) >= 0){
-            people.alice.negAmount -= state.sacrificeAmount;
+        if((people.alice.overMax - state.sacrificeAmount) >= 0){
+            people.alice.overMax -= state.sacrificeAmount;
             total += state.sacrificeAmount;
         } else if((people.alice.amount - state.sacrificeAmount) >= 1){
             people.alice.amount -= state.sacrificeAmount;
@@ -1189,9 +1189,9 @@ function autoSacrifice(dt){
             total += state.sacrificeAmount;
         }
         people.bob.amount = Math.round(people.bob.amount);
-        people.bob.negAmount = Math.round(people.bob.negAmount);
+        people.bob.overMax = Math.round(people.bob.overMax);
         people.alice.amount = Math.round(people.alice.amount);
-        people.alice.negAmount = Math.round(people.alice.negAmount);
+        people.alice.overMax = Math.round(people.alice.overMax);
         people.intern.amount = Math.round(people.intern.amount);
         people.misterE.value += (total * 1e-4);
     } else {
